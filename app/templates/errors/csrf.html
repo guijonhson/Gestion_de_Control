@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error de Seguridad | AgroDev</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .error-page { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div class="container error-page">
+        <div class="text-center">
+            <h1 class="display-1 text-warning">400</h1>
+            <h2 class="mb-3">Token de seguridad inválido</h2>
+            <p class="text-muted mb-2">
+                Tu sesión expiró o el formulario se envió desde un lugar no autorizado.
+            </p>
+            {% if reason %}
+            <p class="text-muted small"><em>{{ reason }}</em></p>
+            {% endif %}
+            <div class="alert alert-info mt-4 d-inline-block">
+                <i class="bi bi-info-circle"></i>
+                <strong>Solución:</strong> Recarga la página y vuelve a intentar.
+            </div>
+            <div class="mt-4">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                    <i class="bi bi-house"></i> Ir al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
