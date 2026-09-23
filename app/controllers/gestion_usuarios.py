@@ -43,7 +43,7 @@ def crear():
     if not verificar_admin():
         return redirect(url_for('dashboard.index'))
     
-    puede, mensaje = verificar_limite(current_user.id_productor, 'usuario')
+    puede, mensaje = verificar_limite(current_user, 'usuario')
     if not puede:
         flash(mensaje, 'warning')
         return redirect(url_for('suscripciones.upgrade'))

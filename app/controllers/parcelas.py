@@ -17,7 +17,7 @@ def listar():
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required
 def crear():
-    puede, mensaje = verificar_limite(current_user.id_productor, 'parcela')
+    puede, mensaje = verificar_limite(current_user, 'parcela')
     if not puede:
         flash(mensaje, 'warning')
         return redirect(url_for('suscripciones.upgrade'))

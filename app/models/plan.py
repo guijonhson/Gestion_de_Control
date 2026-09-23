@@ -10,80 +10,95 @@ class Plan(db.Model):
     descripcion = db.Column(db.Text)
     activo = db.Column(db.Boolean, default=True)
     
-    # Limites de recursos (None = ilimitado)
+    # Límites de recursos (None = ilimitado)
     limite_fincas = db.Column(db.Integer, default=1)
     limite_usuarios = db.Column(db.Integer, default=1)
     limite_parcelas = db.Column(db.Integer, default=5)
     limite_productos = db.Column(db.Integer, default=50)
+    limite_inventario = db.Column(db.Integer, default=50)
+    limite_registros = db.Column(db.Integer, default=10)
+    limite_gastos = db.Column(db.Integer, default=10)
     
     # Funcionalidades booleanas
     reportes_avanzados = db.Column(db.Boolean, default=False)
     exportar_datos = db.Column(db.Boolean, default=False)
     
     suscripciones = db.relationship('Suscripcion', back_populates='plan')
+    
+    def __repr__(self):
+        return f'<Plan {self.nombre_plan} (${self.precio_mensual})>'
 
 
 def init_planes():
-    """Inicializa los planes en la base de datos"""
-    from app.models import Plan
+    """Inicializa los planes si no existen."""
+    from app.models import Plan as PlanModel
     
-    # Verificar si ya existen planes
-    if Plan.query.count() > 0:
+    if PlanModel.query.count() > 0:
         return
     
     planes_data = [
         {
             'nombre_plan': 'FREE',
             'precio_mensual': 0.0,
-            'descripcion': 'Plan gratuito para empezar con tu negocio agricola',
+            'descripcion': 'Plan gratuito para empezar',
             'limite_fincas': 1,
             'limite_usuarios': 1,
             'limite_parcelas': 5,
             'limite_productos': 50,
+            'limite_inventario': 50,
+            'limite_registros': 10,
+            'limite_gastos': 10,
             'reportes_avanzados': False,
             'exportar_datos': False,
-            'activo': True
+            'activo': True,
         },
         {
             'nombre_plan': 'BÁSICO',
             'precio_mensual': 10.0,
-            'descripcion': 'Plan ideal para pequenas empresas agricolas',
+            'descripcion': 'Plan para pequeñas empresas agrícolas',
             'limite_fincas': 3,
             'limite_usuarios': 2,
             'limite_parcelas': 15,
             'limite_productos': 200,
+            'limite_inventario': 50,
+            'limite_registros': 10,
+            'limite_gastos': 10,
             'reportes_avanzados': True,
             'exportar_datos': False,
-            'activo': True
+            'activo': True,
         },
         {
             'nombre_plan': 'PRO',
             'precio_mensual': 25.0,
-            'descripcion': 'Plan profesional para empresas en crecimiento',
+            'descripcion': 'Plan profesional',
             'limite_fincas': 10,
             'limite_usuarios': 5,
             'limite_parcelas': 50,
             'limite_productos': 1000,
+            'limite_inventario': 50,
+            'limite_registros': 10,
+            'limite_gastos': 10,
             'reportes_avanzados': True,
             'exportar_datos': True,
-            'activo': True
+            'activo': True,
         },
         {
             'nombre_plan': 'EMPRESARIAL',
             'precio_mensual': 50.0,
-            'descripcion': 'Plan ilimitado para grandes empresas',
-            'limite_fincas': None,  # Ilimitado
-            'limite_usuarios': None,  # Ilimitado
-            'limite_parcelas': None,  # Ilimitado
-            'limite_productos': None,  # Ilimitado
+            'descripcion': 'Plan ilimitado',
+            'limite_fincas': None,
+            'limite_usuarios': None,
+            'limite_parcelas': None,
+            'limite_productos': None,
+            'limite_inventario': None,
+            'limite_registros': None,
+            'limite_gastos': None,
             'reportes_avanzados': True,
             'exportar_datos': True,
-            'activo': True
-        }
+            'activo': True,
+        },
     ]
     
-    for plan_data in planes_data:
-        plan = Plan(**plan_data)
-        db.session.add(plan)
-    
+    for data in planes_data:
+        db.session.add(PlanModel(**data))
     db.session.commit()

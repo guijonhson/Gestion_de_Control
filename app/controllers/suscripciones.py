@@ -74,7 +74,7 @@ def pagar(id_plan):
 @bp.route('/verificar_limite/<tipo>')
 @login_required
 def api_verificar_limite(tipo):
-    puede, mensaje = verificar_limite(current_user.id_productor, tipo)
+    puede, mensaje = verificar_limite(current_user, tipo)
     return {'puede': puede, 'mensaje': mensaje}
 
 @bp.route('/mi_plan')
