@@ -10,7 +10,9 @@ from app.models.produccion import Produccion
 from app.models.gastos import Gasto
 from app.models.inventario import Inventario
 from app.config.database import db
-from app.utils.suscripcion import verificar_limite
+from app.utils.suscripcion import verificar_limite, obtener_suscripcion_activa
+from app.models import Plan, Suscripcion
+from datetime import datetime
 
 bp = Blueprint('gestion_usuarios', __name__, url_prefix='/gestion/usuarios')
 
@@ -35,7 +37,76 @@ def listar():
         usuarios = Usuario.query.all()
     else:
         usuarios = Usuario.query.filter_by(id_productor=current_user.id_productor).all()
-    return render_template('gestion_usuarios/listar.html', usuarios=usuarios)
+
+    planes = Plan.query.filter_by(activo=True).all()
+    suscripcion_por_usuario = {}
+    for u in usuarios:
+        suscripcion_por_usuario[u.id] = obtener_suscripcion_activa(u.id_productor)
+
+    return render_template(
+        'gestion_usuarios/listar.html',
+        usuarios=usuarios,
+        planes=planes,
+        suscripcion_por_usuario=suscripcion_por_usuario,
+    )
+
+
+@bp.route('/corregir_plan_empresarial')
+@login_required
+def corregir_plan_empresarial():
+    """
+    Corrige, con un clic, el plan EMPRESARIAL que ya existe en la base de datos:
+    limite_usuarios = 10, parcelas y productos ilimitados.
+    Seguro de ejecutar varias veces (no toca usuarios ni suscripciones).
+    Visible solo para administrador.
+    """
+    if not verificar_admin():
+        return redirect(url_for('gestion_usuarios.listar'))
+
+    plan = Plan.query.filter_by(nombre_plan='EMPRESARIAL').first()
+
+    if not plan:
+        flash('No existe un plan EMPRESARIAL en la base de datos.', 'danger')
+        return redirect(url_for('gestion_usuarios.listar'))
+
+    plan.limite_usuarios = 10
+    plan.limite_parcelas = None
+    plan.limite_productos = None
+    db.session.commit()
+
+    flash('Plan EMPRESARIAL corregido: 10 usuarios, parcelas y productos ilimitados.', 'success')
+    return redirect(url_for('gestion_usuarios.listar'))
+
+
+@bp.route('/cambiar_plan/<int:id>', methods=['POST'])
+@login_required
+def cambiar_plan(id):
+    if not verificar_admin():
+        return redirect(url_for('gestion_usuarios.listar'))
+
+    usuario = Usuario.query.get_or_404(id)
+    id_plan = request.form.get('id_plan')
+    plan = Plan.query.get_or_404(id_plan)
+
+    suscripcion = obtener_suscripcion_activa(usuario.id_productor)
+
+    if suscripcion:
+        suscripcion.id_plan = plan.id
+        suscripcion.estado = 'activa'
+    else:
+        suscripcion = Suscripcion(
+            id_productor=usuario.id_productor,
+            id_plan=plan.id,
+            fecha_inicio=datetime.now().date(),
+            fecha_fin=None,
+            estado='activa'
+        )
+        db.session.add(suscripcion)
+
+    db.session.commit()
+
+    flash(f'Plan de {usuario.nombre_usuario} actualizado a {plan.nombre_plan}.', 'success')
+    return redirect(url_for('gestion_usuarios.listar'))
 
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required

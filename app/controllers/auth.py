@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app.config.database import db
 from app.models import Productor, Usuario, Suscripcion, Plan, Notificacion
+from app.utils.email import enviar_alerta_email
 from datetime import datetime
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -90,6 +91,19 @@ def register():
         )
         db.session.add(noti)
         db.session.commit()
+        
+        enviar_alerta_email(
+            asunto="Nuevo usuario registrado en Gestión de Control",
+            mensaje=(
+                f"Se registró un nuevo usuario.\n\n"
+                f"Nombre: {nombre_usuario}\n"
+                f"Correo: {correo}\n"
+                f"Productor/Empresa: {nombre_productor}\n"
+                f"Teléfono: {telefono}\n"
+                f"Rol asignado: {'Administrador' if es_primer_usuario else 'Cliente'}\n"
+                f"Plan inicial: FREE"
+            ),
+        )
         
         flash(f'Registro exitoso. Rol asignado: {"Administrador" if es_primer_usuario else "Cliente"}. Por favor inicie sesión.', 'success')
         return redirect(url_for('auth.login'))

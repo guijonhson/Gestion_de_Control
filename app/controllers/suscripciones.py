@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.config.database import db
 from app.models import Plan, Suscripcion, Pago, Notificacion
 from app.utils.suscripcion import verificar_limite, obtener_suscripcion_activa, obtener_limites_plan, contar_recursos
+from app.utils.email import enviar_alerta_email
 from datetime import datetime, timedelta
 import os
 
@@ -65,6 +66,17 @@ def pagar(id_plan):
         )
         db.session.add(noti)
         db.session.commit()
+        
+        enviar_alerta_email(
+            asunto="Solicitud de cambio de plan en Gestión de Control",
+            mensaje=(
+                f"Un usuario solicitó cambio de plan.\n\n"
+                f"Usuario: {current_user.nombre_usuario} ({current_user.correo})\n"
+                f"Plan solicitado: {plan.nombre_plan} (${plan.precio_mensual}/mes)\n"
+                f"Referencia de pago (Yappy): {referencia}\n\n"
+                f"Entra al panel de Pagos Pendientes para aprobar o rechazar."
+            ),
+        )
         
         flash('Pago registrado. Te contactaremos para verificar tu comprobante.', 'success')
         return redirect(url_for('suscripciones.index'))

@@ -59,9 +59,9 @@ def actualizar_planes():
             {
                 'nombre_plan': 'EMPRESARIAL',
                 'precio_mensual': 50.0,
-                'descripcion': 'Plan ilimitado para grandes empresas',
+                'descripcion': 'Hasta 10 usuarios, fincas, parcelas y productos ilimitados',
                 'limite_fincas': None,
-                'limite_usuarios': None,
+                'limite_usuarios': 10,
                 'limite_parcelas': None,
                 'limite_productos': None,
                 'reportes_avanzados': True,
