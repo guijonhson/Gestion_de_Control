@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Ver Productor - AgroDev{% endblock %}
+{% block content %}
+<h3><i class="bi bi-people"></i> {{ productor.nombre }}</h3>
+<div class="card mt-3">
+    <div class="card-body">
+        <p><strong>Teléfono:</strong> {{ productor.telefono or '-' }}</p>
+        <p><strong>Correo:</strong> {{ productor.correo or '-' }}</p>
+        <p><strong>Fecha de registro:</strong> {{ productor.fecha_creacion.strftime('%d/%m/%Y') if productor.fecha_creacion else '-' }}</p>
+        <p><strong>Fincas registradas:</strong> {{ productor.fincas|length }}</p>
+        <a href="{{ url_for('productores.listar') }}" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+{% endblock %}
