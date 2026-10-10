@@ -18,3 +18,10 @@ class Parcela(db.Model):
     finca = db.relationship('Finca', back_populates='parcelas')
     agricola = db.relationship('ParcelaAgricola', back_populates='parcela', uselist=False, cascade='all, delete-orphan')
     ganadera = db.relationship('ParcelaGanadera', back_populates='parcela', uselist=False, cascade='all, delete-orphan')
+    
+    @property
+    def detalle(self):
+        """Resumen legible del detalle segun el tipo de uso."""
+        if self.tipo_uso == 'ganadera':
+            return self.ganadera.resumen() if self.ganadera else None
+        return self.agricola.resumen() if self.agricola else None
