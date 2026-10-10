@@ -22,6 +22,71 @@
                 <label class="form-label">Área (hectáreas)</label>
                 <input type="number" step="0.01" name="area" class="form-control">
             </div>
+            <div class="mb-3">
+                <label class="form-label">Tipo de parcela</label>
+                <select name="tipo_uso" id="tipo_uso" class="form-select">
+                    <option value="agricola">Agrícola</option>
+                    <option value="ganadera">Ganadera</option>
+                </select>
+            </div>
+
+            <div id="bloque-agricola">
+                <hr>
+                <h6 class="text-muted"><i class="bi bi-tree"></i> Datos agrícolas</h6>
+                <div class="mb-3">
+                    <label class="form-label">Cultivo</label>
+                    <select name="id_cultivo" id="id_cultivo" class="form-select">
+                        <option value="">Seleccionar...</option>
+                        {% for cultivo in cultivos %}
+                        <option value="{{ cultivo.id }}" data-densidad="{{ densidades.get(cultivo.nombre_cultivo, '') }}">{{ cultivo.nombre_cultivo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Densidad (plantas por hectárea)</label>
+                    <input type="number" step="1" min="0" name="densidad_plantas_ha" id="densidad_plantas_ha" class="form-control">
+                    <small id="densidad-hint" class="form-text text-muted" style="display:none;"></small>
+                </div>
+            </div>
+
+            <div id="bloque-ganadera" style="display:none;">
+                <hr>
+                <h6 class="text-muted"><i class="bi bi-egg-fried"></i> Datos ganaderos</h6>
+                <div class="mb-3">
+                    <label class="form-label">Pasto</label>
+                    <select name="pasto" id="pasto" class="form-select">
+                        <option value="">Seleccionar...</option>
+                        {% for pasto in pastos %}
+                        <option value="{{ pasto }}">{{ pasto }}</option>
+                        {% endfor %}
+                    </select>
+                    <small id="aviso-pasto" class="form-text text-warning" style="display:none;"></small>
+                </div>
+                <div class="mb-3" id="grupo-pasto-otro" style="display:none;">
+                    <label class="form-label">Especifique el pasto</label>
+                    <input type="text" name="pasto_otro" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo de animal</label>
+                    <select name="tipo_animal" id="tipo_animal" class="form-select">
+                        <option value="">Seleccionar...</option>
+                        {% for animal in tipos_animal %}
+                        <option value="{{ animal }}">{{ animal }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Raza</label>
+                    <input type="text" name="raza" id="raza" class="form-control" list="razas-sugeridas" placeholder="Escriba o elija una raza">
+                    <datalist id="razas-sugeridas"></datalist>
+                    <small class="form-text text-muted">Puede escribir cualquier raza.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Cantidad de animales</label>
+                    <input type="number" step="1" min="0" name="cantidad_animales" class="form-control">
+                </div>
+            </div>
+
             <div class="d-flex flex-column flex-md-row gap-2">
                 <button type="submit" class="btn btn-success w-100 w-md-auto">Guardar</button>
                 <a href="{{ url_for('parcelas.listar') }}" class="btn btn-secondary w-100 w-md-auto">Cancelar</a>
@@ -29,4 +94,62 @@
         </form>
     </div>
 </div>
+<script>
+    var RAZAS = {{ razas_json | tojson }};
+
+    function alternarBloques() {
+        var tipo = document.getElementById('tipo_uso').value;
+        document.getElementById('bloque-agricola').style.display = tipo === 'ganadera' ? 'none' : 'block';
+        document.getElementById('bloque-ganadera').style.display = tipo === 'ganadera' ? 'block' : 'none';
+    }
+
+    function alternarPasto() {
+        var sel = document.getElementById('pasto');
+        var esOtro = sel.value === 'Otro';
+        document.getElementById('grupo-pasto-otro').style.display = esOtro ? 'block' : 'none';
+        var aviso = document.getElementById('aviso-pasto');
+        var texto = '';
+        {% for pasto, mensaje in advertencias_pasto.items() %}
+        if (sel.value === {{ pasto | tojson }}) { texto = {{ mensaje | tojson }}; }
+        {% endfor %}
+        aviso.textContent = texto;
+        aviso.style.display = texto ? 'block' : 'none';
+    }
+
+    function actualizarRazas() {
+        var tipo = document.getElementById('tipo_animal').value;
+        var opciones = RAZAS[tipo] || [];
+        var lista = document.getElementById('razas-sugeridas');
+        lista.innerHTML = '';
+        opciones.forEach(function(r) {
+            var opt = document.createElement('option');
+            opt.value = r;
+            lista.appendChild(opt);
+        });
+    }
+
+    function actualizarDensidad() {
+        var sel = document.getElementById('id_cultivo');
+        var opt = sel.options[sel.selectedIndex];
+        var valor = opt ? opt.getAttribute('data-densidad') : '';
+        var hint = document.getElementById('densidad-hint');
+        if (valor) {
+            hint.textContent = 'Valor referencial (IDIAP): ' + Number(valor).toLocaleString('es-PA') + ' plantas/ha. Ajústelo a su zona.';
+            hint.style.display = 'block';
+        } else {
+            hint.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('tipo_uso').addEventListener('change', alternarBloques);
+        document.getElementById('pasto').addEventListener('change', alternarPasto);
+        document.getElementById('tipo_animal').addEventListener('change', actualizarRazas);
+        document.getElementById('id_cultivo').addEventListener('change', actualizarDensidad);
+        alternarBloques();
+        alternarPasto();
+        actualizarRazas();
+        actualizarDensidad();
+    });
+</script>
 {% endblock %}

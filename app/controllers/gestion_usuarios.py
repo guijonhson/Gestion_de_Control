@@ -78,6 +78,60 @@ def corregir_plan_empresarial():
     return redirect(url_for('gestion_usuarios.listar'))
 
 
+@bp.route('/actualizar_bd_parcelas')
+@login_required
+def actualizar_bd_parcelas():
+    """
+    Prepara la base de datos para el modulo de parcelas por tipo de uso:
+      1. Crea las tablas parcela_agricola y parcela_ganadera si no existen.
+      2. Agrega la columna parcela.tipo_uso si no existe.
+      3. Anade al catalogo los cultivos de Panama que falten (sin borrar nada).
+    Seguro de ejecutar varias veces. Visible solo para administrador.
+    """
+    if not verificar_admin():
+        return redirect(url_for('gestion_usuarios.listar'))
+
+    try:
+        from sqlalchemy import text
+        from app.models import Cultivo
+        from app.utils.catalogos_agro import CULTIVOS_PANAMA
+
+        # 1. Tablas nuevas (create_all solo crea lo que falta)
+        db.create_all()
+
+        # 2. Columna tipo_uso (se comprueba por introspeccion: funciona en
+        #    PostgreSQL/Supabase y en SQLite por igual)
+        inspector = db.inspect(db.engine)
+        columnas = [c['name'] for c in inspector.get_columns('parcela')]
+        columna_creada = False
+        if 'tipo_uso' not in columnas:
+            db.session.execute(text(
+                "ALTER TABLE parcela ADD COLUMN tipo_uso VARCHAR(20) DEFAULT 'agricola' NOT NULL"
+            ))
+            columna_creada = True
+
+        # 3. Cultivos de Panama faltantes
+        nuevos = 0
+        for nombre, ciclo in CULTIVOS_PANAMA:
+            if not Cultivo.query.filter_by(nombre_cultivo=nombre).first():
+                db.session.add(Cultivo(nombre_cultivo=nombre, ciclo_dias_aprox=ciclo))
+                nuevos += 1
+
+        db.session.commit()
+
+        partes = [
+            'columna tipo_uso ' + ('creada' if columna_creada else 'ya existia'),
+            ('se anadieron ' + str(nuevos) + ' cultivos') if nuevos else 'catalogo de cultivos ya completo',
+        ]
+        flash('Base de datos actualizada: ' + '; '.join(partes) + '.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al actualizar la base de datos: ' + str(e), 'danger')
+
+    return redirect(url_for('gestion_usuarios.listar'))
+
+
 @bp.route('/cambiar_plan/<int:id>', methods=['POST'])
 @login_required
 def cambiar_plan(id):
@@ -207,7 +261,7 @@ def eliminar(id):
             fincas_ids = [f.id for f in fincas]
             
             parcelas = Parcela.query.filter(Parcela.id_finca.in_(fincas_ids)).all()
-            parcelas_ids = [p.id_parcela for p in parcelas]
+            parcelas_ids = [p.id for p in parcelas]
             
             RegistroAgricola.query.filter(RegistroAgricola.id_parcela.in_(parcelas_ids)).delete()
             Produccion.query.filter(Produccion.id_parcela.in_(parcelas_ids)).delete()
