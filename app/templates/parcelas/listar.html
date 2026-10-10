@@ -18,6 +18,8 @@
                         <th>Número</th>
                         <th>Finca</th>
                         <th>Área (ha)</th>
+                        <th>Tipo</th>
+                        <th>Detalle</th>
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -27,6 +29,14 @@
                         <td data-label="Número" class="fw-bold">{{ parcela.numero_parcela }}</td>
                         <td data-label="Finca">{{ parcela.finca.nombre_finca }}</td>
                         <td data-label="Área">{{ parcela.area or '-' }}</td>
+                        <td data-label="Tipo">
+                            {% if parcela.tipo_uso == 'ganadera' %}
+                            <span class="badge bg-warning text-dark">Ganadera</span>
+                            {% else %}
+                            <span class="badge bg-success">Agrícola</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Detalle">{{ parcela.detalle or '-' }}</td>
                         <td data-label="Acciones" class="text-center">
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{{ url_for('parcelas.editar', id=parcela.id) }}" class="btn btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>
