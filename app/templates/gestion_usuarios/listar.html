@@ -9,6 +9,9 @@
         <a href="{{ url_for('gestion_usuarios.corregir_plan_empresarial') }}" class="btn btn-outline-secondary btn-sm w-100 w-md-auto" title="Corrige el plan EMPRESARIAL a 10 usuarios, parcelas/productos ilimitados">
             <i class="bi bi-tools"></i> Corregir Plan Empresarial
         </a>
+        <a href="{{ url_for('gestion_usuarios.actualizar_bd_parcelas') }}" class="btn btn-outline-secondary btn-sm w-100 w-md-auto" title="Crea las tablas de parcelas agrícola/ganadera, agrega la columna tipo_uso y añade los cultivos de Panamá que falten">
+            <i class="bi bi-database-add"></i> Actualizar Base de Datos
+        </a>
     </div>
     {% endif %}
 </div>
