@@ -8,11 +8,11 @@ en código (no en la base de datos) para poder ajustarlas sin migraciones.
 
 # Pastos y forrajes: lista oficial MIDA (2009) + Mombasa y Tanzania (IDIAP)
 PASTOS = [
-    'Elefante', 'Pojuca', 'Angleton', 'Decumbens', 'Tanner', 'Humidicola',
-    'Mulato II', 'Alicia (Bermuda)', 'Guinea', 'Aleman', 'Para', 'Andropogon',
-    'Suazi', 'Estrella africana', 'Estrella puertorriqueña', 'Marandu',
-    'Toledo', 'Cratylia', 'Mani forrajero', 'Leucaena', 'Morera',
-    'Mombasa', 'Tanzania',
+    'Elefante', 'Pojuca', 'Angleton', 'Decumbens', 'Tanner', 'Humidícola',
+    'Mulato II', 'Alicia (Bermuda)', 'Guinea', 'Alemán', 'Pará', 'Andropogon',
+    'Suazi', 'Estrella africana', 'Estrella puertorriqueña', 'Marandú',
+    'Toledo', 'Cratylia', 'Maní forrajero', 'Leucaena', 'Morera',
+    'Mombasa', 'Tanzania', 'Otro',
 ]
 
 # Tipos de animal criados en una parcela ganadera
@@ -25,7 +25,7 @@ TIPOS_ANIMAL = [
 RAZAS_SUGERIDAS = {
     'Bovino': [
         'Gyr', 'Brahman', 'Sindi', 'Guzerat', 'Nelore', 'Holstein',
-        'Pardo Suizo', 'Senepol', 'Guaymí', 'Guibala',
+        'Pardo Suizo', 'Senepol', 'Guaymí', 'Guabalá',
     ],
     'Equino': [],
     'Caprino': [],
@@ -38,24 +38,24 @@ RAZAS_SUGERIDAS = {
 
 # Advertencias de manejo por pasto (MIDA)
 ADVERTENCIAS_PASTO = {
-    'Humidicola': 'No recomendado para caballos: contiene oxalato de calcio.',
-    'Decumbens': 'Asociado a lesiones hepaticas en bovinos jovenes.',
+    'Humidícola': 'No recomendado para caballos: contiene oxalato de calcio.',
+    'Decumbens': 'Asociado a lesiones hepáticas en bovinos jóvenes.',
 }
 
-# Cultivos de Panama (cierre agricola 2024-2025, MIDA) con ciclo aproximado en dias.
-# Los nombres que ya existen en el catalogo de la base de datos se respetan.
+# Cultivos de Panamá (cierre agrícola 2024-2025, MIDA) con ciclo aproximado en días.
+# Los que ya existen en el catálogo de la base de datos se respetan.
 CULTIVOS_PANAMA = [
-    ('Arroz', 150), ('Maiz', 120), ('Frijol', 90), ('Sorgo', 110),
-    ('Caña de azucar', 365), ('Cafe', 270), ('Cacao', 180), ('Palma aceitera', 365),
-    ('Papa', 120), ('Cebolla', 130), ('Tomate industrial', 90),
+    ('Arroz', 150), ('Maíz', 120), ('Frijol', 90), ('Sorgo', 110),
+    ('Caña de azúcar', 365), ('Café', 270), ('Cacao', 180), ('Palma aceitera', 365),
+    ('Papa', 120), ('Cebolla', 130), ('Tomate', 90),
     ('Yuca', 180), ('Ñame', 240), ('Otoe', 270),
-    ('Melon', 90), ('Sandia', 85), ('Zapallo', 100),
-    'Platano', 'Citricos', 'Piña', 'Papaya',
+    ('Melón', 90), ('Sandía', 85), ('Zapallo', 100),
+    ('Plátano', 300), ('Cítricos', 365), ('Piña', 540), ('Papaya', 270),
 ]
 
-# Densidad referencial (plantas por hectarea). Solo donde existe fuente tecnica.
+# Densidad referencial (plantas por hectárea). Solo donde existe fuente técnica.
 DENSIDAD_REFERENCIAL = {
-    'Maiz': 65000,    # IDIAP: maiz hibrido, aprox. 65 mil plantas/ha
-    'Frijol': 200000, # IDIAP: orden de 200 mil plantas/ha (guia, por confirmar)
+    'Maíz': 65000,     # IDIAP: maíz híbrido, aprox. 65 mil plantas/ha
+    'Frijol': 200000,  # IDIAP: orden de 200 mil plantas/ha (guía, por confirmar)
     'Poroto': 200000,
 }
