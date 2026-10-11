@@ -83,6 +83,12 @@ def create_app():
     # Crear DB y catálogos solo si no existen
     with app.app_context():
         db.create_all()
+        try:
+            from app.utils.migraciones import aplicar_cambios_estructurales
+            aplicar_cambios_estructurales()
+        except Exception as e:
+            db.session.rollback()
+            print(f"[migraciones] No se pudieron aplicar cambios estructurales: {e}")
         _init_catalogs()
     
     return app
