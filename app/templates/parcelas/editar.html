@@ -1,3 +1,4 @@
+successfully downloaded text file (SHA: 98d3f5c0c6c9a0d351a7821b844a60e176994784)
 {% extends "base.html" %}
 {% block title %}Editar Parcela - AgroDev{% endblock %}
 {% block content %}
@@ -27,6 +28,14 @@
             <div class="mb-3">
                 <label class="form-label">Área (hectáreas)</label>
                 <input type="number" step="0.01" name="area" class="form-control" value="{{ parcela.area or '' }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Fecha de inicio de siembra</label>
+                <input type="date" name="fecha_inicio_siembra" class="form-control" value="{{ parcela.fecha_inicio_siembra.strftime('%Y-%m-%d') if parcela.fecha_inicio_siembra else '' }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Duración del cultivo (días)</label>
+                <input type="number" min="1" step="1" name="duracion_cultivo" class="form-control" value="{{ parcela.duracion_cultivo or '' }}" placeholder="Ej: 120">
             </div>
             <div class="mb-3">
                 <label class="form-label">Tipo de parcela</label>
