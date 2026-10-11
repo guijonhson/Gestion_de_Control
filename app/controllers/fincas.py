@@ -24,13 +24,15 @@ def crear():
         nombre_finca = request.form.get('nombre_finca')
         ubicacion = request.form.get('ubicacion')
         area_total = request.form.get('area_total')
+        rubro = (request.form.get('rubro') or '').strip() or None
         
         # current_user.id_productor es un integer
         finca = Finca(
             id_productor=current_user.id_productor,
             nombre_finca=nombre_finca,
             ubicacion=ubicacion,
-            area_total=float(area_total) if area_total else None
+            area_total=float(area_total) if area_total else None,
+            rubro=rubro
         )
         db.session.add(finca)
         db.session.commit()
@@ -82,6 +84,7 @@ def editar(id):
         finca.ubicacion = request.form.get('ubicacion')
         area_total = request.form.get('area_total')
         finca.area_total = float(area_total) if area_total else None
+        finca.rubro = (request.form.get('rubro') or '').strip() or None
         db.session.commit()
         
         flash('Finca actualizada exitosamente.', 'success')
