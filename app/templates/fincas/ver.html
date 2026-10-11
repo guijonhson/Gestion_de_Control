@@ -6,6 +6,7 @@
     <div class="card-body">
         <p><strong>Ubicación:</strong> {{finca.ubicacion or '-' }}</p>
         <p><strong>Área Total:</strong> {{finca.area_total or '-' }} hectáreas</p>
+        <p><strong>Rubro:</strong> {{ finca.rubro or '-' }}</p>
         <p><strong>Parcelas:</strong> {{finca.parcelas|length }}</p>
         <a href="{{ url_for('fincas.listar') }}" class="btn btn-secondary">Volver</a>
     </div>

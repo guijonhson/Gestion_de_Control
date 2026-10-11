@@ -10,9 +10,33 @@ from app.utils.catalogos_agro import (
     ADVERTENCIAS_PASTO,
     DENSIDAD_REFERENCIAL,
 )
+from datetime import datetime
 import json
 
 bp = Blueprint('parcelas', __name__, url_prefix='/parcelas')
+
+
+def _leer_siembra(form):
+    fecha_txt = (form.get('fecha_inicio_siembra') or '').strip()
+    duracion_txt = (form.get('duracion_cultivo') or '').strip()
+
+    fecha = None
+    if fecha_txt:
+        try:
+            fecha = datetime.strptime(fecha_txt, '%Y-%m-%d').date()
+        except ValueError:
+            return None, None, 'La fecha de inicio de siembra no es válida.'
+
+    duracion = None
+    if duracion_txt:
+        try:
+            duracion = int(duracion_txt)
+        except ValueError:
+            return None, None, 'La duración del cultivo debe ser un número entero de días.'
+        if duracion <= 0:
+            return None, None, 'La duración del cultivo debe ser mayor que 0 días.'
+
+    return fecha, duracion, None
 
 
 def _contexto_formulario():
@@ -49,6 +73,26 @@ def _datos_ganaderos():
     }
 
 
+def _guardar_detalle(parcela):
+    """Crea o actualiza el sub-registro segun el tipo de uso."""
+    if parcela.tipo_uso == 'ganadera':
+        datos = _datos_ganaderos()
+        if parcela.ganadera is None:
+            db.session.add(ParcelaGanadera(id_parcela=parcela.id, **datos))
+        else:
+            for campo, valor in datos.items():
+                setattr(parcela.ganadera, campo, valor)
+    else:
+        datos = _datos_agricola()
+        if parcela.agricola is None:
+            db.session.add(ParcelaAgricola(id_parcela=parcela.id, **datos))
+        else:
+            for campo, valor in datos.items():
+                setattr(parcela.agricola, campo, valor)
+        cultivo = Cultivo.query.get(datos['id_cultivo']) if datos['id_cultivo'] else None
+        parcela.cultivo_actual = cultivo.nombre_cultivo if cultivo else None
+
+
 @bp.route('/')
 @login_required
 def listar():
@@ -76,23 +120,22 @@ def crear():
         if tipo_uso not in ('agricola', 'ganadera'):
             tipo_uso = 'agricola'
         
+        fecha_siembra, duracion, error = _leer_siembra(request.form)
+        if error:
+            flash(error, 'danger')
+            return render_template('parcelas/crear.html', fincas=fincas, **_contexto_formulario())
+        
         parcela = Parcela(
             id_finca=int(id_finca),
             numero_parcela=numero_parcela,
             area=float(area) if area else None,
+            fecha_inicio_siembra=fecha_siembra,
+            duracion_cultivo=duracion,
             tipo_uso=tipo_uso
         )
         db.session.add(parcela)
         db.session.flush()
-        
-        if tipo_uso == 'ganadera':
-            db.session.add(ParcelaGanadera(id_parcela=parcela.id, **_datos_ganaderos()))
-        else:
-            datos = _datos_agricola()
-            db.session.add(ParcelaAgricola(id_parcela=parcela.id, **datos))
-            cultivo = Cultivo.query.get(datos['id_cultivo']) if datos['id_cultivo'] else None
-            parcela.cultivo_actual = cultivo.nombre_cultivo if cultivo else None
-        
+        _guardar_detalle(parcela)
         db.session.commit()
         
         flash('Parcela creada exitosamente.', 'success')
@@ -122,10 +165,17 @@ def editar(id):
     fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
     
     if request.method == 'POST':
+        fecha_siembra, duracion, error = _leer_siembra(request.form)
+        if error:
+            flash(error, 'danger')
+            return render_template('parcelas/editar.html', parcela=parcela, fincas=fincas, **_contexto_formulario())
+        
         parcela.id_finca = int(request.form.get('id_finca'))
         parcela.numero_parcela = request.form.get('numero_parcela')
         area = request.form.get('area')
         parcela.area = float(area) if area else None
+        parcela.fecha_inicio_siembra = fecha_siembra
+        parcela.duracion_cultivo = duracion
         
         nuevo_tipo = request.form.get('tipo_uso', parcela.tipo_uso)
         if nuevo_tipo not in ('agricola', 'ganadera'):
@@ -138,26 +188,11 @@ def editar(id):
             if parcela.ganadera:
                 db.session.delete(parcela.ganadera)
             parcela.tipo_uso = nuevo_tipo
+            if parcela.tipo_uso == 'ganadera':
+                parcela.cultivo_actual = None
             db.session.flush()
         
-        if parcela.tipo_uso == 'ganadera':
-            datos = _datos_ganaderos()
-            if parcela.ganadera is None:
-                db.session.add(ParcelaGanadera(id_parcela=parcela.id, **datos))
-            else:
-                for campo, valor in datos.items():
-                    setattr(parcela.ganadera, campo, valor)
-            parcela.cultivo_actual = None
-        else:
-            datos = _datos_agricola()
-            if parcela.agricola is None:
-                db.session.add(ParcelaAgricola(id_parcela=parcela.id, **datos))
-            else:
-                for campo, valor in datos.items():
-                    setattr(parcela.agricola, campo, valor)
-            cultivo = Cultivo.query.get(datos['id_cultivo']) if datos['id_cultivo'] else None
-            parcela.cultivo_actual = cultivo.nombre_cultivo if cultivo else None
-        
+        _guardar_detalle(parcela)
         db.session.commit()
         
         flash('Parcela actualizada exitosamente.', 'success')

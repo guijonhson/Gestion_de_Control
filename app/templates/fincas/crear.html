@@ -17,6 +17,11 @@
                 <label class="form-label">Área Total (hectáreas)</label>
                 <input type="number" step="0.01" name="area_total" class="form-control">
             </div>
+            <div class="mb-3">
+                <label class="form-label">Rubro</label>
+                <input type="text" name="rubro" maxlength="200" class="form-control" placeholder="Ej: ganadería, café, hortalizas">
+                <div class="form-text">Con qué recursos o actividad se maneja la finca.</div>
+            </div>
             <div class="d-flex flex-column flex-md-row gap-2">
                 <button type="submit" class="btn btn-success w-100 w-md-auto">Guardar</button>
                 <a href="{{ url_for('fincas.listar') }}" class="btn btn-secondary w-100 w-md-auto">Cancelar</a>

@@ -11,6 +11,7 @@ from app.models.gastos import Gasto
 from app.models.inventario import Inventario
 from app.config.database import db
 from app.utils.suscripcion import verificar_limite, obtener_suscripcion_activa
+from app.utils.migraciones import obtener_pendientes, aplicar_todo
 from app.models import Plan, Suscripcion
 from datetime import datetime
 
@@ -43,92 +44,45 @@ def listar():
     for u in usuarios:
         suscripcion_por_usuario[u.id] = obtener_suscripcion_activa(u.id_productor)
 
+    pendientes = []
+    if current_user.rol == 'administrador':
+        try:
+            pendientes = obtener_pendientes()
+        except Exception as e:
+            db.session.rollback()
+            print(f"[migraciones] No se pudo revisar pendientes: {e}")
+
     return render_template(
         'gestion_usuarios/listar.html',
         usuarios=usuarios,
         planes=planes,
         suscripcion_por_usuario=suscripcion_por_usuario,
+        pendientes=pendientes,
     )
 
 
-@bp.route('/corregir_plan_empresarial')
+@bp.route('/actualizar_base_datos', methods=['POST'])
 @login_required
-def corregir_plan_empresarial():
-    """
-    Corrige, con un clic, el plan EMPRESARIAL que ya existe en la base de datos:
-    limite_usuarios = 10, parcelas y productos ilimitados.
-    Seguro de ejecutar varias veces (no toca usuarios ni suscripciones).
-    Visible solo para administrador.
-    """
-    if not verificar_admin():
-        return redirect(url_for('gestion_usuarios.listar'))
-
-    plan = Plan.query.filter_by(nombre_plan='EMPRESARIAL').first()
-
-    if not plan:
-        flash('No existe un plan EMPRESARIAL en la base de datos.', 'danger')
-        return redirect(url_for('gestion_usuarios.listar'))
-
-    plan.limite_usuarios = 10
-    plan.limite_parcelas = None
-    plan.limite_productos = None
-    db.session.commit()
-
-    flash('Plan EMPRESARIAL corregido: 10 usuarios, parcelas y productos ilimitados.', 'success')
-    return redirect(url_for('gestion_usuarios.listar'))
-
-
-@bp.route('/actualizar_bd_parcelas')
-@login_required
-def actualizar_bd_parcelas():
-    """
-    Prepara la base de datos para el modulo de parcelas por tipo de uso:
-      1. Crea las tablas parcela_agricola y parcela_ganadera si no existen.
-      2. Agrega la columna parcela.tipo_uso si no existe.
-      3. Anade al catalogo los cultivos de Panama que falten (sin borrar nada).
-    Seguro de ejecutar varias veces. Visible solo para administrador.
-    """
+def actualizar_base_datos():
     if not verificar_admin():
         return redirect(url_for('gestion_usuarios.listar'))
 
     try:
-        from sqlalchemy import text
-        from app.models import Cultivo
-        from app.utils.catalogos_agro import CULTIVOS_PANAMA
-
-        # 1. Tablas nuevas (create_all solo crea lo que falta)
-        db.create_all()
-
-        # 2. Columna tipo_uso (se comprueba por introspeccion: funciona en
-        #    PostgreSQL/Supabase y en SQLite por igual)
-        inspector = db.inspect(db.engine)
-        columnas = [c['name'] for c in inspector.get_columns('parcela')]
-        columna_creada = False
-        if 'tipo_uso' not in columnas:
-            db.session.execute(text(
-                "ALTER TABLE parcela ADD COLUMN tipo_uso VARCHAR(20) DEFAULT 'agricola' NOT NULL"
-            ))
-            columna_creada = True
-
-        # 3. Cultivos de Panama faltantes
-        nuevos = 0
-        for nombre, ciclo in CULTIVOS_PANAMA:
-            if not Cultivo.query.filter_by(nombre_cultivo=nombre).first():
-                db.session.add(Cultivo(nombre_cultivo=nombre, ciclo_dias_aprox=ciclo))
-                nuevos += 1
-
-        db.session.commit()
-
-        partes = [
-            'columna tipo_uso ' + ('creada' if columna_creada else 'ya existia'),
-            ('se anadieron ' + str(nuevos) + ' cultivos') if nuevos else 'catalogo de cultivos ya completo',
-        ]
-        flash('Base de datos actualizada: ' + '; '.join(partes) + '.', 'success')
-
+        antes = obtener_pendientes()
+        aplicar_todo()
+        despues = obtener_pendientes()
     except Exception as e:
         db.session.rollback()
-        flash('Error al actualizar la base de datos: ' + str(e), 'danger')
+        print(f"[migraciones] Error al actualizar: {e}")
+        flash('No se pudo completar la actualización. Revisa los registros del servidor.', 'danger')
+        return redirect(url_for('gestion_usuarios.listar'))
 
+    if despues:
+        flash('Actualización parcial. Aún falta: ' + ', '.join(despues), 'warning')
+    elif antes:
+        flash('Base de datos actualizada correctamente: ' + ', '.join(antes), 'success')
+    else:
+        flash('La base de datos ya estaba actualizada.', 'info')
     return redirect(url_for('gestion_usuarios.listar'))
 
 
@@ -210,11 +164,22 @@ def editar(id):
         return redirect(url_for('dashboard.index'))
     
     usuario = Usuario.query.get_or_404(id)
-    productores = Productor.query.all()
     
     if request.method == 'POST':
+        nombre_productor = (request.form.get('nombre_productor') or '').strip()
+        if not nombre_productor:
+            flash('El nombre del productor no puede estar vacío.', 'danger')
+            return render_template('gestion_usuarios/editar.html', usuario=usuario)
+        if len(nombre_productor) > 100:
+            flash('El nombre del productor no puede superar 100 caracteres.', 'danger')
+            return render_template('gestion_usuarios/editar.html', usuario=usuario)
+        
         usuario.nombre_usuario = request.form.get('nombre_usuario')
         usuario.correo = request.form.get('correo')
+        
+        # Solo se edita el nombre del productor de ESTE usuario
+        if usuario.productor:
+            usuario.productor.nombre = nombre_productor
         
         if current_user.rol == 'administrador':
             usuario.rol = request.form.get('rol')
@@ -232,7 +197,7 @@ def editar(id):
         flash('Usuario actualizado exitosamente.', 'success')
         return redirect(url_for('gestion_usuarios.listar'))
     
-    return render_template('gestion_usuarios/editar.html', usuario=usuario, productores=productores)
+    return render_template('gestion_usuarios/editar.html', usuario=usuario)
 
 @bp.route('/eliminar/<int:id>', methods=['POST'])
 @login_required

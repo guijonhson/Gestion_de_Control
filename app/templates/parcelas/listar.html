@@ -1,3 +1,4 @@
+successfully downloaded text file (SHA: 94308d00541d3f9a94abc0f008ef0a7bbaa0a016)
 {% extends "base.html" %}
 {% block title %}Parcelas - AgroDev{% endblock %}
 {% block content %}
@@ -18,6 +19,8 @@
                         <th>Número</th>
                         <th>Finca</th>
                         <th>Área (ha)</th>
+                        <th>Inicio de siembra</th>
+                        <th>Duración (días)</th>
                         <th>Tipo</th>
                         <th>Detalle</th>
                         <th class="text-center">Acciones</th>
@@ -29,6 +32,8 @@
                         <td data-label="Número" class="fw-bold">{{ parcela.numero_parcela }}</td>
                         <td data-label="Finca">{{ parcela.finca.nombre_finca }}</td>
                         <td data-label="Área">{{ parcela.area or '-' }}</td>
+                        <td data-label="Inicio de siembra">{{ parcela.fecha_inicio_siembra.strftime('%d/%m/%Y') if parcela.fecha_inicio_siembra else '-' }}</td>
+                        <td data-label="Duración">{{ parcela.duracion_cultivo or '-' }}</td>
                         <td data-label="Tipo">
                             {% if parcela.tipo_uso == 'ganadera' %}
                             <span class="badge bg-warning text-dark">Ganadera</span>

@@ -1,3 +1,4 @@
+successfully downloaded text file (SHA: e0b98b48e602e4c2f7d4eb4f4669954f9fc7ebbe)
 {% extends "base.html" %}
 {% block title %}Gestión de Usuarios - AgroDev{% endblock %}
 {% block content %}
@@ -6,12 +7,13 @@
     {% if current_user.rol == 'administrador' %}
     <div class="d-flex gap-2 flex-wrap w-100 w-md-auto">
         <a href="{{ url_for('gestion_usuarios.crear') }}" class="btn btn-success btn-sm w-100 w-md-auto"><i class="bi bi-plus"></i> Nuevo Usuario</a>
-        <a href="{{ url_for('gestion_usuarios.corregir_plan_empresarial') }}" class="btn btn-outline-secondary btn-sm w-100 w-md-auto" title="Corrige el plan EMPRESARIAL a 10 usuarios, parcelas/productos ilimitados">
-            <i class="bi bi-tools"></i> Corregir Plan Empresarial
-        </a>
-        <a href="{{ url_for('gestion_usuarios.actualizar_bd_parcelas') }}" class="btn btn-outline-secondary btn-sm w-100 w-md-auto" title="Crea las tablas de parcelas agrícola/ganadera, agrega la columna tipo_uso y añade los cultivos de Panamá que falten">
-            <i class="bi bi-database-add"></i> Actualizar Base de Datos
-        </a>
+        {% if pendientes %}
+        <form method="POST" action="{{ url_for('gestion_usuarios.actualizar_base_datos') }}" class="w-100 w-md-auto">
+            <button type="submit" class="btn btn-outline-secondary btn-sm w-100" title="Pendiente: {{ pendientes|join(', ') }}">
+                <i class="bi bi-tools"></i> Actualizar base de datos
+            </button>
+        </form>
+        {% endif %}
     </div>
     {% endif %}
 </div>

@@ -10,6 +10,8 @@ class Parcela(db.Model):
     numero_parcela = db.Column(db.String(50), nullable=False)
     area = db.Column(db.Float)
     cultivo_actual = db.Column(db.String(100))
+    fecha_inicio_siembra = db.Column(db.Date)
+    duracion_cultivo = db.Column(db.Integer)  # en días
     tipo_uso = db.Column(db.String(20), default='agricola', nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     
