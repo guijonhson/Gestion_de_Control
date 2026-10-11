@@ -6,15 +6,9 @@
     <div class="card-body">
         <form method="POST">
             <div class="mb-3">
-                <label class="form-label">Productor</label>
-                <select name="id_productor" class="form-select" required {% if current_user.rol != 'administrador' %}disabled{% endif %}>
-                    {% for productor in productores %}
-                    <option value="{{ productor.id }}" {% if usuario.id_productor == productor.id %}selected{% endif %}>
-                        {{ productor.nombre }}
-                    </option>
-                    {% endfor %}
-                </select>
-                {% if current_user.rol != 'administrador' %}<input type="hidden" name="id_productor" value="{{ usuario.id_productor }}">{% endif %}
+                <label class="form-label">Nombre del Productor</label>
+                <input type="text" name="nombre_productor" maxlength="100" class="form-control" value="{{ usuario.productor.nombre if usuario.productor else '' }}" required>
+                <div class="form-text">Este nombre se aplica a todos los usuarios de este productor.</div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Nombre de Usuario</label>
