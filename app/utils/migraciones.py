@@ -19,6 +19,24 @@ PLAN_EMPRESARIAL = {
     'limite_productos': None,
 }
 
+# Texto de herramientas que se pegó por error en campos de texto
+TEXTO_BASURA = '%successfully downloaded text file%'
+MARCADOR_REVISAR = 'PENDIENTE'
+
+# (etiqueta, import_path, modelo, campo, es_obligatorio)
+CAMPOS_A_REVISAR = [
+    ('usuario.nombre_usuario', 'app.models.usuario', 'Usuario', 'nombre_usuario', True),
+    ('productor.nombre', 'app.models.productor', 'Productor', 'nombre', True),
+    ('finca.nombre_finca', 'app.models.finca', 'Finca', 'nombre_finca', True),
+    ('parcela.numero_parcela', 'app.models.parcela', 'Parcela', 'numero_parcela', True),
+    ('finca.rubro', 'app.models.finca', 'Finca', 'rubro', False),
+    ('parcela.cultivo_actual', 'app.models.parcela', 'Parcela', 'cultivo_actual', False),
+    ('parcela_ganadera.pasto', 'app.models.parcela_ganadera', 'ParcelaGanadera', 'pasto', False),
+    ('parcela_ganadera.raza', 'app.models.parcela_ganadera', 'ParcelaGanadera', 'raza', False),
+    ('registro_agricola.dosis', 'app.models.registro_agricola', 'RegistroAgricola', 'dosis', False),
+    ('registro_agricola.observaciones', 'app.models.registro_agricola', 'RegistroAgricola', 'observaciones', False),
+]
+
 
 def _es_postgres():
     return db.engine.dialect.name == 'postgresql'
@@ -52,6 +70,50 @@ def _catalogo_pendiente():
     return [n for n, _ in CULTIVOS_PANAMA if n not in existentes]
 
 
+def _modelo(import_path, nombre):
+    import importlib
+    modulo = importlib.import_module(import_path)
+    return getattr(modulo, nombre)
+
+
+def limpiar_texto_pegado():
+    """
+    Borra el texto de herramientas que se pegó por error en campos de texto.
+    Devuelve un dict {campo: filas corregidas}. Los campos obligatorios quedan
+    con el marcador PENDIENTE; los opcionales se vacían.
+    """
+    corregidos = {}
+    for etiqueta, import_path, nombre, campo, obligatorio in CAMPOS_A_REVISAR:
+        try:
+            modelo = _modelo(import_path, nombre)
+            columna = getattr(modelo, campo)
+            consulta = modelo.query.filter(columna.ilike(TEXTO_BASURA))
+            cantidad = consulta.count()
+            if cantidad:
+                valor = MARCADOR_REVISAR if obligatorio else None
+                consulta.update({columna: valor}, synchronize_session=False)
+                corregidos[etiqueta] = cantidad
+        except Exception as e:
+            print(f"[migraciones] No se pudo revisar {etiqueta}: {e}")
+            db.session.rollback()
+    if corregidos:
+        db.session.commit()
+    return corregidos
+
+
+def _basura_pendiente():
+    total = 0
+    try:
+        for etiqueta, import_path, nombre, campo, _ob in CAMPOS_A_REVISAR:
+            modelo = _modelo(import_path, nombre)
+            columna = getattr(modelo, campo)
+            total += modelo.query.filter(columna.ilike(TEXTO_BASURA)).count()
+    except Exception as e:
+        print(f"[migraciones] No se pudo revisar texto pegado: {e}")
+        db.session.rollback()
+    return total
+
+
 def obtener_pendientes():
     pendientes = []
     inspector = inspect(db.engine)
@@ -69,6 +131,10 @@ def obtener_pendientes():
 
     if _catalogo_pendiente():
         pendientes.append('Catálogo de cultivos de Panamá')
+
+    basura = _basura_pendiente()
+    if basura:
+        pendientes.append(f'Texto pegado por error en {basura} campo(s)')
 
     return pendientes
 
@@ -118,3 +184,4 @@ def aplicar_plan_empresarial():
 def aplicar_todo():
     aplicar_cambios_estructurales()
     aplicar_plan_empresarial()
+    return limpiar_texto_pegado()
