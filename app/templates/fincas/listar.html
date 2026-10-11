@@ -18,6 +18,7 @@
                         <th>Nombre</th>
                         <th>Ubicación</th>
                         <th>Área Total (ha)</th>
+                        <th>Rubro</th>
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -27,6 +28,7 @@
                         <td data-label="Nombre" class="fw-bold">{{ financa.nombre_finca }}</td>
                         <td data-label="Ubicación">{{ financa.ubicacion or '-' }}</td>
                         <td data-label="Área">{{ financa.area_total or '-' }}</td>
+                        <td data-label="Rubro">{{ financa.rubro or '-' }}</td>
                         <td data-label="Acciones" class="text-center">
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{{ url_for('fincas.ver', id=financa.id) }}" class="btn btn-info" title="Ver"><i class="bi bi-eye"></i></a>
