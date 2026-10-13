@@ -76,6 +76,44 @@ def _modelo(import_path, nombre):
     return getattr(modulo, nombre)
 
 
+def _tablas_public():
+    """Todas las tablas del esquema public (solo PostgreSQL)."""
+    if not _es_postgres():
+        return []
+    filas = db.session.execute(text(
+        "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
+    )).fetchall()
+    return [f[0] for f in filas]
+
+
+def _tablas_sin_rls():
+    """Tablas del esquema public sin RLS habilitado (solo PostgreSQL)."""
+    if not _es_postgres():
+        return []
+    filas = db.session.execute(text(
+        "SELECT c.relname FROM pg_class c "
+        "JOIN pg_namespace n ON n.oid = c.relnamespace "
+        "WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relrowsecurity = false"
+    )).fetchall()
+    return [f[0] for f in filas]
+
+
+def habilitar_rls():
+    """
+    Habilita Row Level Security en todas las tablas del esquema public.
+
+    Cierra el acceso por la API publica de Supabase (anon key). NO afecta a la
+    aplicacion: Flask se conecta como usuario postgres (dueno de las tablas),
+    que ignora RLS. Devuelve la lista de tablas procesadas.
+    """
+    tablas = _tablas_public()
+    for tabla in tablas:
+        db.session.execute(text('ALTER TABLE public."' + tabla + '" ENABLE ROW LEVEL SECURITY'))
+    if tablas:
+        db.session.commit()
+    return tablas
+
+
 def limpiar_texto_pegado():
     """
     Borra el texto de herramientas que se pegó por error en campos de texto.
@@ -136,6 +174,10 @@ def obtener_pendientes():
     if basura:
         pendientes.append(f'Texto pegado por error en {basura} campo(s)')
 
+    sin_rls = _tablas_sin_rls()
+    if sin_rls:
+        pendientes.append(f'Seguridad: RLS deshabilitado en {len(sin_rls)} tabla(s)')
+
     return pendientes
 
 
@@ -168,6 +210,9 @@ def aplicar_cambios_estructurales():
         for nombre in faltantes:
             db.session.add(Cultivo(nombre_cultivo=nombre, ciclo_dias_aprox=ciclos.get(nombre)))
         db.session.commit()
+
+    # Seguridad: habilitar RLS en las tablas del esquema public
+    habilitar_rls()
 
 
 def aplicar_plan_empresarial():
