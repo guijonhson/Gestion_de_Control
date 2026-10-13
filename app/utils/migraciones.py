@@ -42,6 +42,16 @@ def _es_postgres():
     return db.engine.dialect.name == 'postgresql'
 
 
+def _revisar(etiqueta, funcion):
+    """Ejecuta una verificacion aislada: un fallo no oculta las demas."""
+    try:
+        return funcion()
+    except Exception as e:
+        print(f"[migraciones] No se pudo revisar {etiqueta}: {e}")
+        db.session.rollback()
+        return None
+
+
 def _columnas(inspector, tabla):
     return {c['name'] for c in inspector.get_columns(tabla)}
 
@@ -141,40 +151,58 @@ def limpiar_texto_pegado():
 
 def _basura_pendiente():
     total = 0
-    try:
-        for etiqueta, import_path, nombre, campo, _ob in CAMPOS_A_REVISAR:
+    for etiqueta, import_path, nombre, campo, _ob in CAMPOS_A_REVISAR:
+        if _revisar(etiqueta, lambda: None) is None and False:
+            continue
+        try:
             modelo = _modelo(import_path, nombre)
             columna = getattr(modelo, campo)
             total += modelo.query.filter(columna.ilike(TEXTO_BASURA)).count()
-    except Exception as e:
-        print(f"[migraciones] No se pudo revisar texto pegado: {e}")
-        db.session.rollback()
+        except Exception as e:
+            print(f"[migraciones] No se pudo revisar {etiqueta}: {e}")
+            db.session.rollback()
     return total
 
 
 def obtener_pendientes():
+    """
+    Lista lo que falta por aplicar. Cada verificacion es independiente:
+    si una falla, las demas siguen reportando (y el boton sigue apareciendo).
+    """
     pendientes = []
-    inspector = inspect(db.engine)
 
-    for tabla, columna, _tipo in COLUMNAS_NUEVAS:
-        existentes = _columnas(inspector, tabla)
-        if columna not in existentes:
-            pendientes.append(f'Columna {tabla}.{columna}')
+    # Columnas nuevas
+    def _columnas_faltantes():
+        inspector = inspect(db.engine)
+        return [
+            f'Columna {tabla}.{columna}'
+            for tabla, columna, _tipo in COLUMNAS_NUEVAS
+            if columna not in _columnas(inspector, tabla)
+        ]
+    faltantes = _revisar('columnas', _columnas_faltantes)
+    if faltantes:
+        pendientes.extend(faltantes)
 
-    if _dosis_pendiente(inspector):
+    # Tipo de dosis
+    if _revisar('dosis', lambda: _dosis_pendiente(inspect(db.engine))):
         pendientes.append('Tipo de dato de registro_agricola.dosis')
 
-    if _plan_pendiente():
+    # Plan EMPRESARIAL
+    if _revisar('plan EMPRESARIAL', lambda: _plan_pendiente()):
         pendientes.append('Límites del plan EMPRESARIAL')
 
-    if _catalogo_pendiente():
+    # Catálogo de cultivos
+    faltan = _revisar('catálogo', lambda: _catalogo_pendiente())
+    if faltan:
         pendientes.append('Catálogo de cultivos de Panamá')
 
-    basura = _basura_pendiente()
+    # Texto pegado por error
+    basura = _revisar('texto pegado', _basura_pendiente)
     if basura:
         pendientes.append(f'Texto pegado por error en {basura} campo(s)')
 
-    sin_rls = _tablas_sin_rls()
+    # Seguridad RLS
+    sin_rls = _revisar('RLS', lambda: _tablas_sin_rls())
     if sin_rls:
         pendientes.append(f'Seguridad: RLS deshabilitado en {len(sin_rls)} tabla(s)')
 
