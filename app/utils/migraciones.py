@@ -152,8 +152,6 @@ def limpiar_texto_pegado():
 def _basura_pendiente():
     total = 0
     for etiqueta, import_path, nombre, campo, _ob in CAMPOS_A_REVISAR:
-        if _revisar(etiqueta, lambda: None) is None and False:
-            continue
         try:
             modelo = _modelo(import_path, nombre)
             columna = getattr(modelo, campo)
