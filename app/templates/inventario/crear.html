@@ -4,11 +4,22 @@
 <h3 class="h4 h3-md"><i class="bi bi-box-seam"></i> Agregar al Inventario</h3>
 <div class="card mt-3">
     <div class="card-body">
+        {% if not fincas or not productos %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            Para agregar inventario necesitas
+            {% if not fincas %}una finca{% endif %}{% if not fincas and not productos %} y {% endif %}{% if not productos %}un producto{% endif %}.
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                {% if not fincas %}<a href="{{ url_for('fincas.crear') }}" class="btn btn-sm btn-success">Crear finca</a>{% endif %}
+                {% if not productos %}<a href="{{ url_for('productos.crear') }}" class="btn btn-sm btn-success">Crear producto</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
         <form method="POST">
             <div class="row">
                 <div class="col-12 col-sm-6 mb-3">
                     <label class="form-label">Producto</label>
-                    <select name="id_producto" class="form-select" required>
+                    <select name="id_producto" class="form-select" required {% if not productos %}disabled{% endif %}>
                         <option value="">Seleccionar...</option>
                         {% for producto in productos %}
                         <option value="{{ producto.id }}">{{ producto.nombre_producto }} ({{ producto.tipo_producto }})</option>
@@ -17,7 +28,7 @@
                 </div>
                 <div class="col-12 col-sm-6 mb-3">
                     <label class="form-label">Finca</label>
-                    <select name="id_finca" class="form-select" required>
+                    <select name="id_finca" class="form-select" required {% if not fincas %}disabled{% endif %}>
                         <option value="">Seleccionar...</option>
                         {% for financa in fincas %}
                         <option value="{{ financa.id }}">{{ financa.nombre_finca }}</option>
@@ -28,7 +39,7 @@
             <div class="row">
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="form-label">Cantidad</label>
-                    <input type="number" step="0.01" name="cantidad" class="form-control" required>
+                    <input type="number" step="0.01" min="0" name="cantidad" class="form-control" required>
                 </div>
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="form-label">Unidad de Medida</label>
@@ -42,7 +53,7 @@
                 </div>
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="form-label">Stock Mínimo (alerta)</label>
-                    <input type="number" step="0.01" name="stock_minimo" class="form-control" value="0">
+                    <input type="number" step="0.01" min="0" name="stock_minimo" class="form-control" value="0">
                 </div>
             </div>
             <div class="row">
@@ -52,15 +63,15 @@
                 </div>
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="form-label">Proveedor</label>
-                    <input type="text" name="proveedor" class="form-control">
+                    <input type="text" name="proveedor" class="form-control" maxlength="100">
                 </div>
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="form-label">Costo Unitario ($)</label>
-                    <input type="number" step="0.01" name="costo_unitario" class="form-control">
+                    <input type="number" step="0.01" min="0" name="costo_unitario" class="form-control">
                 </div>
             </div>
             <div class="d-flex flex-column flex-md-row gap-2">
-                <button type="submit" class="btn btn-success w-100 w-md-auto">Agregar al Inventario</button>
+                <button type="submit" class="btn btn-success w-100 w-md-auto" {% if not fincas or not productos %}disabled{% endif %}>Agregar al Inventario</button>
                 <a href="{{ url_for('inventario.listar') }}" class="btn btn-secondary w-100 w-md-auto">Cancelar</a>
             </div>
         </form>

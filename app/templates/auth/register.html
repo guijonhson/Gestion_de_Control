@@ -1,32 +1,82 @@
 {% extends "base.html" %}
+{% block title %}Crear Cuenta - AgroDev{% endblock %}
 {% block login_content %}
 <div class="container">
     <div class="row justify-content-center mt-4 mt-md-5">
-        <div class="col-11 col-sm-10 col-md-8 col-lg-5">
+        <div class="col-11 col-sm-10 col-md-8 col-lg-6">
             <div class="card auth-card">
                 <div class="card-body text-center p-4">
                     <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="AgroDev" class="auth-logo mb-3 img-fluid">
+                    <h1 class="h5 mb-3">Crear cuenta</h1>
                     <form method="POST" class="text-start">
                         <div class="mb-3">
-                            <label class="form-label">Nombre del Productor</label>
-                            <input type="text" name="nombre" class="form-control" required>
+                            <label class="form-label" for="nombre">Nombre del Productor</label>
+                            <input type="text" id="nombre" name="nombre" class="form-control"
+                                   value="{{ datos.get('nombre', '') if datos else '' }}"
+                                   maxlength="100" autocomplete="organization" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="text" name="telefono" class="form-control">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <input type="tel" id="telefono" name="telefono" class="form-control"
+                                   value="{{ datos.get('telefono', '') if datos else '' }}"
+                                   maxlength="20" inputmode="tel" autocomplete="tel">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Correo</label>
-                            <input type="email" name="correo" class="form-control" required>
+                            <label class="form-label" for="correo">Correo</label>
+                            <input type="email" id="correo" name="correo" class="form-control"
+                                   value="{{ datos.get('correo', '') if datos else '' }}"
+                                   maxlength="100" autocomplete="email" autocapitalize="none"
+                                   spellcheck="false" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Nombre de Usuario</label>
-                            <input type="text" name="nombre_usuario" class="form-control" required>
+                            <label class="form-label" for="nombre_usuario">Nombre de Usuario</label>
+                            <input type="text" id="nombre_usuario" name="nombre_usuario" class="form-control"
+                                   value="{{ datos.get('nombre_usuario', '') if datos else '' }}"
+                                   maxlength="50" autocomplete="username" autocapitalize="none"
+                                   spellcheck="false" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Contraseña</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <label class="form-label" for="password">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" class="form-control"
+                                       minlength="8" maxlength="128" autocomplete="new-password" required>
+                                <button class="btn btn-outline-secondary btn-mostrar-password" type="button"
+                                        data-toggle-password="password" aria-label="Mostrar contraseña"
+                                        aria-pressed="false"><i class="bi bi-eye"></i></button>
+                            </div>
+                            <div class="form-text">Mínimo 8 caracteres, con al menos una letra y un número.</div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="password_confirmacion">Confirmar contraseña</label>
+                            <div class="input-group">
+                                <input type="password" id="password_confirmacion" name="password_confirmacion"
+                                       class="form-control" minlength="8" maxlength="128"
+                                       autocomplete="new-password" required>
+                                <button class="btn btn-outline-secondary btn-mostrar-password" type="button"
+                                        data-toggle-password="password_confirmacion" aria-label="Mostrar contraseña"
+                                        aria-pressed="false"><i class="bi bi-eye"></i></button>
+                            </div>
+                        </div>
+
+                        {% if plan_free %}
+                        <div class="alert alert-light border small">
+                            <strong>Plan {{ plan_free.nombre_plan|nombre_plan_visible }}:</strong>
+                            {% if plan_free.limite_fincas is none %}fincas ilimitadas{% else %}{{ plan_free.limite_fincas }} finca(s){% endif %},
+                            {% if plan_free.limite_parcelas is none %}parcelas ilimitadas{% else %}{{ plan_free.limite_parcelas }} parcela(s){% endif %} y
+                            {% if plan_free.limite_usuarios is none %}usuarios ilimitados{% else %}{{ plan_free.limite_usuarios }} usuario(s){% endif %}.
+                            <a href="{{ url_for('publico.planes') }}">Ver todos los planes</a>
+                        </div>
+                        {% endif %}
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="acepto_terminos"
+                                   id="acepto_terminos" value="1" required>
+                            <label class="form-check-label" for="acepto_terminos">
+                                Acepto los <a href="{{ url_for('publico.terminos') }}" target="_blank" rel="noopener">Términos y Condiciones</a>
+                                y la <a href="{{ url_for('publico.privacidad') }}" target="_blank" rel="noopener">Política de Privacidad</a>.
+                            </label>
+                        </div>
+
                         <button type="submit" class="btn btn-success w-100">Registrarse</button>
                     </form>
                     <div class="text-center mt-3">

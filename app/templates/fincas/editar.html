@@ -7,15 +7,15 @@
         <form method="POST">
             <div class="mb-3">
                 <label class="form-label">Nombre de la Finca</label>
-                <input type="text" name="nombre_finca" class="form-control" value="{{finca.nombre_finca}}" required>
+                <input type="text" name="nombre_finca" class="form-control" maxlength="100" value="{{finca.nombre_finca}}" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Ubicación</label>
-                <input type="text" name="ubicacion" class="form-control" value="{{finca.ubicacion or ''}}">
+                <input type="text" name="ubicacion" class="form-control" maxlength="200" value="{{finca.ubicacion or ''}}">
             </div>
             <div class="mb-3">
                 <label class="form-label">Área Total (hectáreas)</label>
-                <input type="number" step="0.01" name="area_total" class="form-control" value="{{finca.area_total or ''}}">
+                <input type="number" step="0.01" min="0" name="area_total" class="form-control" value="{{finca.area_total or ''}}">
             </div>
             <div class="mb-3">
                 <label class="form-label">Rubro</label>

@@ -84,6 +84,37 @@
     <p class="text-muted mb-0">Sistema de Gestión Agropecuaria</p>
 </div>
 
+{% if not pasos_completos %}
+<div class="card mb-4 border-success">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-flag"></i> Primeros pasos</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Completa estos pasos para empezar a usar el sistema.</p>
+        <div class="list-group list-group-flush">
+            {% for paso in primeros_pasos %}
+            <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 px-0">
+                <span>
+                    {% if paso.hecho %}
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span class="text-decoration-line-through text-muted">{{ paso.titulo }}</span>
+                    {% else %}
+                    <i class="bi bi-circle text-secondary"></i>
+                    {{ paso.titulo }}
+                    {% endif %}
+                </span>
+                {% if not paso.hecho %}
+                <a href="{{ paso.url }}" class="btn btn-sm btn-outline-success">{{ paso.boton }}</a>
+                {% else %}
+                <span class="badge bg-success">Hecho</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="card border-success h-100 dashboard-card">

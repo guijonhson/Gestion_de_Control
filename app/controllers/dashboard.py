@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, url_for
 from flask_login import login_required, current_user
 from app.config.database import db
-from app.models import Finca, Parcela, RegistroAgricola, Gasto, Produccion, Inventario, Usuario, Productor, Pago, Notificacion
+from app.models import Aplicador, Finca, Parcela, RegistroAgricola, Gasto, Produccion, Inventario, Usuario, Productor, Pago, Notificacion
 from app.utils.suscripcion import obtener_limites_plan, contar_recursos
 from datetime import datetime, timedelta
 
@@ -29,7 +29,36 @@ def index():
     total_produccion = sum(p.ingreso_total for p in producciones) if parcelas_ids else 0
     
     num_productos_inventario = Inventario.query.filter(Inventario.id_finca.in_(fincas_ids)).count() if fincas_ids else 0
-    
+    num_aplicadores = Aplicador.query.filter_by(id_productor=id_productor).count()
+
+    primeros_pasos = [
+        {
+            'titulo': 'Crear tu primera finca',
+            'hecho': num_fincas > 0,
+            'url': url_for('fincas.crear'),
+            'boton': 'Crear finca',
+        },
+        {
+            'titulo': 'Crear una parcela',
+            'hecho': num_parcelas > 0,
+            'url': url_for('parcelas.crear'),
+            'boton': 'Crear parcela',
+        },
+        {
+            'titulo': 'Registrar un aplicador',
+            'hecho': num_aplicadores > 0,
+            'url': url_for('aplicadores.crear'),
+            'boton': 'Registrar aplicador',
+        },
+        {
+            'titulo': 'Guardar tu primer registro agrícola',
+            'hecho': num_registros > 0,
+            'url': url_for('registros.crear'),
+            'boton': 'Crear registro',
+        },
+    ]
+    pasos_completos = all(paso['hecho'] for paso in primeros_pasos)
+
     limites = obtener_limites_plan(id_productor)
     recursos = contar_recursos(id_productor)
     
@@ -66,4 +95,6 @@ def index():
         num_productos_inventario=num_productos_inventario,
         limites=limites,
         recursos=recursos,
+        primeros_pasos=primeros_pasos,
+        pasos_completos=pasos_completos,
         metricas_admin=metricas_admin)

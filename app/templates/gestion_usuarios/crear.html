@@ -16,15 +16,18 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Nombre de Usuario</label>
-                <input type="text" name="nombre_usuario" class="form-control" required>
+                <input type="text" name="nombre_usuario" class="form-control" maxlength="50" autocomplete="username" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Correo</label>
-                <input type="email" name="correo" class="form-control" required>
+                <input type="email" name="correo" class="form-control" maxlength="100" autocomplete="email" autocapitalize="none" spellcheck="false" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Contraseña</label>
-                <input type="password" name="password" class="form-control" required>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" class="form-control" minlength="8" maxlength="128" autocomplete="new-password" required>
+                    <button class="btn btn-outline-secondary btn-mostrar-password" type="button" data-toggle-password="password" aria-label="Mostrar contraseña" aria-pressed="false"><i class="bi bi-eye"></i></button>
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Rol</label>

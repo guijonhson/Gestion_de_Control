@@ -4,6 +4,21 @@
 <h3 class="h4 h3-md"><i class="bi bi-journal-text"></i> Nueva Aplicación</h3>
 <div class="card mt-3">
     <div class="card-body">
+        {% set faltantes = [] %}
+        {% if not parcelas %}{% set _ = faltantes.append('una parcela') %}{% endif %}
+        {% if not cultivos %}{% set _ = faltantes.append('un cultivo') %}{% endif %}
+        {% if not productos %}{% set _ = faltantes.append('un producto') %}{% endif %}
+        {% if not aplicadores %}{% set _ = faltantes.append('un aplicador') %}{% endif %}
+        {% if faltantes %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            Antes de registrar una aplicación necesitas {{ faltantes|join(', ') }}.
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                {% if not parcelas %}<a href="{{ url_for('parcelas.crear') }}" class="btn btn-sm btn-success">Crear parcela</a>{% endif %}
+                {% if not aplicadores %}<a href="{{ url_for('aplicadores.crear') }}" class="btn btn-sm btn-success">Registrar aplicador</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
         <form method="POST">
             <div class="row">
                 <div class="col-12 col-sm-6 mb-3">
@@ -12,7 +27,7 @@
                 </div>
                 <div class="col-12 col-sm-6 mb-3">
                     <label class="form-label">Cultivo</label>
-                    <select name="id_cultivo" class="form-select" required>
+                    <select name="id_cultivo" class="form-select" required {% if not cultivos %}disabled{% endif %}>
                         <option value="">Seleccionar...</option>
                         {% for cultivo in cultivos %}
                         <option value="{{ cultivo.id }}">{{ cultivo.nombre_cultivo }}</option>
@@ -23,7 +38,7 @@
             <div class="row">
                 <div class="col-12 col-sm-6 mb-3">
                     <label class="form-label">Producto</label>
-                    <select name="id_producto" class="form-select" required>
+                    <select name="id_producto" class="form-select" required {% if not productos %}disabled{% endif %}>
                         <option value="">Seleccionar...</option>
                         {% for producto in productos %}
                         <option value="{{ producto.id }}">{{ producto.nombre_producto }} ({{ producto.tipo_producto }})</option>
@@ -50,7 +65,7 @@
                 </div>
                 <div class="col-12 col-sm-6 mb-3">
                     <label class="form-label">Parcela</label>
-                    <select name="id_parcela" class="form-select" required>
+                    <select name="id_parcela" class="form-select" required {% if not parcelas %}disabled{% endif %}>
                         <option value="">Seleccionar...</option>
                         {% for parcela in parcelas %}
                         <option value="{{ parcela.id }}">{{ parcela.numero_parcela }} ({{ parcela.finca.nombre_finca }})</option>
@@ -60,7 +75,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Aplicador</label>
-                <select name="id_aplicador" class="form-select" required>
+                <select name="id_aplicador" class="form-select" required {% if not aplicadores %}disabled{% endif %}>
                     <option value="">Seleccionar...</option>
                     {% for aplicador in aplicadores %}
                     <option value="{{ aplicador.id }}">{{ aplicador.nombre }}</option>
@@ -69,10 +84,10 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Observaciones</label>
-                <textarea name="observaciones" class="form-control" rows="3"></textarea>
+                <textarea name="observaciones" class="form-control" rows="3" maxlength="500"></textarea>
             </div>
             <div class="d-flex flex-column flex-md-row gap-2">
-                <button type="submit" class="btn btn-success w-100 w-md-auto">Guardar Registro</button>
+                <button type="submit" class="btn btn-success w-100 w-md-auto" {% if faltantes %}disabled{% endif %}>Guardar Registro</button>
                 <a href="{{ url_for('registros.listar') }}" class="btn btn-secondary w-100 w-md-auto">Cancelar</a>
             </div>
         </form>

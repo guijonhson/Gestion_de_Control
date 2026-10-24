@@ -207,9 +207,11 @@ def verificar_limite(usuario_o_id, tipo_recurso):
             'usuario': 'usuarios', 'gasto': 'gastos', 'registro': 'registros'
         }.get(tipo_recurso, 'recursos')
         
+        from app.utils.planes import nombre_plan_visible
+
         return False, (
-            f"Tu plan {plan.nombre_plan} permite solo {limite} {plural}. "
-            f"Actualiza tu plan para seguir creciendo."
+            f"Tu plan {nombre_plan_visible(plan.nombre_plan)} permite solo "
+            f"{limite} {plural}. Actualiza tu plan para seguir creciendo."
         )
     
     return True, None

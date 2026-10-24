@@ -9,6 +9,7 @@ COLUMNAS_NUEVAS = [
     ('finca', 'rubro', 'VARCHAR(200)'),
     ('parcela', 'fecha_inicio_siembra', 'DATE'),
     ('parcela', 'duracion_cultivo', 'INTEGER'),
+    ('usuario', 'fecha_aceptacion_terminos', 'TIMESTAMP'),
 ]
 
 # Reglas del plan EMPRESARIAL (None = ilimitado)

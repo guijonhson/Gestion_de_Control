@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% macro contenido() %}
+<div class="container py-4" style="max-width: 1000px;">
+    <div class="text-center mb-4">
+        <h1 class="h3">Planes de Gestión de Control</h1>
+        <p class="text-muted mb-1">Precios y límites tomados de los planes activos del sistema.</p>
+    </div>
+
+    <div class="row g-4">
+        {% for plan in planes %}
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header text-center">
+                    <h2 class="h5 mb-0">{{ plan.nombre_plan|nombre_plan_visible }}</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-center mb-3">
+                        <span class="fs-3 fw-bold">${{ "%.2f"|format(plan.precio_mensual or 0) }}</span>
+                        <span class="text-muted">/mes</span>
+                    </p>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i>
+                            {{ 'Ilimitadas' if plan.limite_fincas is none else plan.limite_fincas }} fincas
+                        </li>
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i>
+                            {{ 'Ilimitados' if plan.limite_usuarios is none else plan.limite_usuarios }} usuarios
+                        </li>
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i>
+                            {{ 'Ilimitadas' if plan.limite_parcelas is none else plan.limite_parcelas }} parcelas
+                        </li>
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i>
+                            {{ 'Ilimitados' if plan.limite_productos is none else plan.limite_productos }} productos
+                        </li>
+                        {% if plan.reportes_avanzados %}
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i> Reportes avanzados</li>
+                        {% endif %}
+                        {% if plan.exportar_datos %}
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i> Exportar datos</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-success w-100">Crear cuenta</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12"><div class="alert alert-info">No hay planes disponibles por el momento.</div></div>
+        {% endfor %}
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body small">
+            <strong>Contacto:</strong>
+            {{ contacto.correo }} · {{ contacto.telefono }} · {{ contacto.pais }}
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">Volver al inicio de sesión</a>
+    </div>
+</div>
+{% endmacro %}
+
+{% block title %}Planes - AgroDev{% endblock %}
+{% block content %}{{ contenido() }}{% endblock %}
+{% block login_content %}{{ contenido() }}{% endblock %}

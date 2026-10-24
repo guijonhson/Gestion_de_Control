@@ -27,7 +27,7 @@
         {% if suscripcion %}
         <div class="row">
             <div class="col-md-6">
-                <p><strong>Plan:</strong> {{ suscripcion.plan.nombre_plan }}</p>
+                <p><strong>Plan:</strong> {{ suscripcion.plan.nombre_plan|nombre_plan_visible }}</p>
                 <p><strong>Precio:</strong> ${{ suscripcion.plan.precio_mensual }}/mes</p>
                 <p><strong>Estado:</strong> 
                     {% if suscripcion.estado == 'activa' %}
