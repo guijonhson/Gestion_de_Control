@@ -4,6 +4,7 @@ from app.config.database import db
 from app.models import Plan, Suscripcion, Pago, Notificacion
 from app.utils.suscripcion import verificar_limite, obtener_suscripcion_activa, obtener_limites_plan, contar_recursos
 from app.utils.email import enviar_alerta_email
+from app.utils.planes import nombre_plan_visible
 from datetime import datetime, timedelta
 import os
 
@@ -60,7 +61,7 @@ def pagar(id_plan):
         db.session.commit()
         
         noti = Notificacion(
-            mensaje=f"Usuario {current_user.correo} solicitó upgrade al plan {plan.nombre_plan} - Pago pendiente de revisión",
+            mensaje=f"Usuario {current_user.correo} solicitó upgrade al plan {nombre_plan_visible(plan.nombre_plan)} - Pago pendiente de revisión",
             tipo='pago',
             leido=False
         )
@@ -72,7 +73,7 @@ def pagar(id_plan):
             mensaje=(
                 f"Un usuario solicitó cambio de plan.\n\n"
                 f"Usuario: {current_user.nombre_usuario} ({current_user.correo})\n"
-                f"Plan solicitado: {plan.nombre_plan} (${plan.precio_mensual}/mes)\n"
+                f"Plan solicitado: {nombre_plan_visible(plan.nombre_plan)} (${plan.precio_mensual}/mes)\n"
                 f"Referencia de pago (Yappy): {referencia}\n\n"
                 f"Entra al panel de Pagos Pendientes para aprobar o rechazar."
             ),
@@ -127,7 +128,10 @@ def aprobar_pago(id):
     
     noti = Notificacion(
         id_productor=pago.id_productor,
-        mensaje=f"Tu pago ha sido aprobado. Tu plan {suscripcion.plan.nombre_plan} está activo.",
+        mensaje=(
+            'Tu pago ha sido aprobado. Tu plan '
+            f'{nombre_plan_visible(suscripcion.plan.nombre_plan)} está activo.'
+        ),
         tipo='pago_aprobado',
         leido=False
     )

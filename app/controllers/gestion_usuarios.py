@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from app.models.usuario import Usuario
 from app.models.productor import Productor
 from app.models.finca import Finca
@@ -12,6 +14,15 @@ from app.models.inventario import Inventario
 from app.config.database import db
 from app.utils.suscripcion import verificar_limite, obtener_suscripcion_activa
 from app.utils.migraciones import obtener_pendientes, aplicar_todo
+from app.utils.planes import nombre_plan_visible
+from app.utils.validaciones import (
+    ErrorValidacion,
+    a_entero,
+    limpiar_texto,
+    validar_correo,
+    validar_largo,
+    validar_password,
+)
 from app.models import Plan, Suscripcion
 from datetime import datetime
 
@@ -113,7 +124,11 @@ def cambiar_plan(id):
 
     db.session.commit()
 
-    flash(f'Plan de {usuario.nombre_usuario} actualizado a {plan.nombre_plan}.', 'success')
+    flash(
+        f'Plan de {usuario.nombre_usuario} actualizado a '
+        f'{nombre_plan_visible(plan.nombre_plan)}.',
+        'success',
+    )
     return redirect(url_for('gestion_usuarios.listar'))
 
 @bp.route('/crear', methods=['GET', 'POST'])
@@ -130,30 +145,46 @@ def crear():
     productores = Productor.query.all()
     
     if request.method == 'POST':
-        id_productor = request.form.get('id_productor')
-        nombre_usuario = request.form.get('nombre_usuario')
-        correo = request.form.get('correo')
-        password = request.form.get('password')
-        rol = request.form.get('rol')
-        
-        if Usuario.query.filter_by(correo=correo).first():
+        try:
+            id_productor = a_entero(
+                request.form.get('id_productor'), 'El productor', minimo=1
+            )
+            if not Productor.query.get(id_productor):
+                raise ErrorValidacion('El productor seleccionado no existe.')
+            nombre_usuario = validar_largo(
+                request.form.get('nombre_usuario'),
+                50,
+                'El nombre de usuario',
+                obligatorio=True,
+            )
+            correo = validar_correo(request.form.get('correo'))
+            password = validar_password(request.form.get('password'))
+            rol = request.form.get('rol')
+            if rol not in ('cliente', 'administrador'):
+                raise ErrorValidacion('El rol seleccionado no es válido.')
+
+            if Usuario.query.filter(func.lower(Usuario.correo) == correo).first():
+                raise ErrorValidacion('El correo ya está registrado.')
+
+            usuario = Usuario(
+                id_productor=id_productor,
+                nombre_usuario=nombre_usuario,
+                correo=correo,
+                rol=rol,
+                activo=True,
+            )
+            usuario.set_password(password)
+            db.session.add(usuario)
+            db.session.commit()
+            flash('Usuario creado exitosamente.', 'success')
+            return redirect(url_for('gestion_usuarios.listar'))
+        except ErrorValidacion as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+        except IntegrityError:
+            db.session.rollback()
             flash('El correo ya está registrado.', 'danger')
-            return redirect(url_for('gestion_usuarios.crear'))
-        
-        usuario = Usuario(
-            id_productor=int(id_productor),
-            nombre_usuario=nombre_usuario,
-            correo=correo,
-            rol=rol,
-            activo=True
-        )
-        usuario.set_password(password)
-        db.session.add(usuario)
-        db.session.commit()
-        
-        flash('Usuario creado exitosamente.', 'success')
-        return redirect(url_for('gestion_usuarios.listar'))
-    
+
     return render_template('gestion_usuarios/crear.html', productores=productores)
 
 @bp.route('/editar/<int:id>', methods=['GET', 'POST'])
@@ -166,37 +197,60 @@ def editar(id):
     usuario = Usuario.query.get_or_404(id)
     
     if request.method == 'POST':
-        nombre_productor = (request.form.get('nombre_productor') or '').strip()
-        if not nombre_productor:
-            flash('El nombre del productor no puede estar vacío.', 'danger')
-            return render_template('gestion_usuarios/editar.html', usuario=usuario)
-        if len(nombre_productor) > 100:
-            flash('El nombre del productor no puede superar 100 caracteres.', 'danger')
-            return render_template('gestion_usuarios/editar.html', usuario=usuario)
-        
-        usuario.nombre_usuario = request.form.get('nombre_usuario')
-        usuario.correo = request.form.get('correo')
-        
-        # Solo se edita el nombre del productor de ESTE usuario
-        if usuario.productor:
-            usuario.productor.nombre = nombre_productor
-        
-        if current_user.rol == 'administrador':
-            usuario.rol = request.form.get('rol')
-        
-        nuevo_password = request.form.get('password')
-        if nuevo_password:
-            usuario.set_password(nuevo_password)
-        
-        if current_user.rol == 'administrador':
-            estado = request.form.get('activo')
-            usuario.activo = True if estado == '1' else False
-        
-        db.session.commit()
-        
-        flash('Usuario actualizado exitosamente.', 'success')
-        return redirect(url_for('gestion_usuarios.listar'))
-    
+        try:
+            nombre_productor = validar_largo(
+                request.form.get('nombre_productor'),
+                100,
+                'El nombre del productor',
+                obligatorio=True,
+            )
+            nombre_usuario = validar_largo(
+                request.form.get('nombre_usuario'),
+                50,
+                'El nombre de usuario',
+                obligatorio=True,
+            )
+            correo = validar_correo(request.form.get('correo'))
+
+            existente = (
+                Usuario.query
+                .filter(func.lower(Usuario.correo) == correo, Usuario.id != usuario.id)
+                .first()
+            )
+            if existente:
+                raise ErrorValidacion('El correo ya está registrado.')
+
+            usuario.nombre_usuario = nombre_usuario
+            usuario.correo = correo
+
+            if usuario.productor:
+                usuario.productor.nombre = nombre_productor
+
+            if current_user.rol == 'administrador':
+                rol = request.form.get('rol')
+                if rol not in ('cliente', 'administrador'):
+                    raise ErrorValidacion('El rol seleccionado no es válido.')
+                usuario.rol = rol
+
+            nuevo_password = request.form.get('password')
+            if nuevo_password:
+                validar_password(nuevo_password)
+                usuario.set_password(nuevo_password)
+
+            if current_user.rol == 'administrador':
+                estado = request.form.get('activo')
+                usuario.activo = True if estado == '1' else False
+
+            db.session.commit()
+            flash('Usuario actualizado exitosamente.', 'success')
+            return redirect(url_for('gestion_usuarios.listar'))
+        except ErrorValidacion as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+        except IntegrityError:
+            db.session.rollback()
+            flash('El correo ya está registrado.', 'danger')
+
     return render_template('gestion_usuarios/editar.html', usuario=usuario)
 
 @bp.route('/eliminar/<int:id>', methods=['POST'])

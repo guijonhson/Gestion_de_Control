@@ -1,16 +1,26 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required, current_user
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
 from app.config.database import db
 from app.models import Finca
+from app.utils.permisos import obtener_finca
 from app.utils.suscripcion import verificar_limite
+from app.utils.validaciones import (
+    ErrorValidacion,
+    a_decimal,
+    limpiar_texto,
+    validar_largo,
+)
 
 bp = Blueprint('fincas', __name__, url_prefix='/fincas')
+
 
 @bp.route('/')
 @login_required
 def listar():
     fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
     return render_template('fincas/listar.html', fincas=fincas)
+
 
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required
@@ -19,97 +29,81 @@ def crear():
     if not puede:
         flash(mensaje, 'warning')
         return redirect(url_for('suscripciones.upgrade'))
-    
-    if request.method == 'POST':
-        nombre_finca = request.form.get('nombre_finca')
-        ubicacion = request.form.get('ubicacion')
-        area_total = request.form.get('area_total')
-        rubro = (request.form.get('rubro') or '').strip() or None
-        
-        # current_user.id_productor es un integer
-        finca = Finca(
-            id_productor=current_user.id_productor,
-            nombre_finca=nombre_finca,
-            ubicacion=ubicacion,
-            area_total=float(area_total) if area_total else None,
-            rubro=rubro
-        )
-        db.session.add(finca)
-        db.session.commit()
-        
-        flash('Finca creada exitosamente.', 'success')
-        return redirect(url_for('fincas.listar'))
-    
-    return render_template('fincas/crear.html')
 
-@bp.route('/ver/<id>')
+    datos = {}
+    if request.method == 'POST':
+        datos = request.form
+        try:
+            nombre_finca = limpiar_texto(request.form.get('nombre_finca'))
+            validar_largo(nombre_finca, 100, 'El nombre de la finca', obligatorio=True)
+            ubicacion = limpiar_texto(request.form.get('ubicacion'))
+            validar_largo(ubicacion, 200, 'La ubicación')
+            rubro = limpiar_texto(request.form.get('rubro'))
+            validar_largo(rubro, 200, 'El rubro')
+            area_total = a_decimal(
+                request.form.get('area_total'), 'El área total', minimo=0
+            )
+
+            finca = Finca(
+                id_productor=current_user.id_productor,
+                nombre_finca=nombre_finca,
+                ubicacion=ubicacion or None,
+                area_total=area_total,
+                rubro=rubro or None,
+            )
+            db.session.add(finca)
+            db.session.commit()
+            flash('Finca creada exitosamente.', 'success')
+            return redirect(url_for('fincas.listar'))
+        except ErrorValidacion as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+
+    return render_template('fincas/crear.html', datos=datos)
+
+
+@bp.route('/ver/<int:id>')
 @login_required
 def ver(id):
-    try:
-        id_finca = int(id)
-        finca = Finca.query.get(id_finca)
-    except (ValueError, TypeError):
-        flash('Finca no encontrada.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
-    if not finca:
-        flash('Finca no encontrada.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
-    if finca.id_productor != current_user.id_productor:
-        flash('No tiene permisos para acceder.', 'danger')
-        return redirect(url_for('fincas.listar'))
+    finca = obtener_finca(id)
     return render_template('fincas/ver.html', finca=finca)
 
-@bp.route('/editar/<id>', methods=['GET', 'POST'])
+
+@bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar(id):
-    try:
-        id_finca = int(id)
-        finca = Finca.query.get(id_finca)
-    except (ValueError, TypeError):
-        flash('Finca no encontrada.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
-    if not finca:
-        flash('Finca no encontrada.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
-    if finca.id_productor != current_user.id_productor:
-        flash('No tiene permisos para acceder.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
+    finca = obtener_finca(id)
+
     if request.method == 'POST':
-        finca.nombre_finca = request.form.get('nombre_finca')
-        finca.ubicacion = request.form.get('ubicacion')
-        area_total = request.form.get('area_total')
-        finca.area_total = float(area_total) if area_total else None
-        finca.rubro = (request.form.get('rubro') or '').strip() or None
-        db.session.commit()
-        
-        flash('Finca actualizada exitosamente.', 'success')
-        return redirect(url_for('fincas.listar'))
-    
+        try:
+            nombre_finca = limpiar_texto(request.form.get('nombre_finca'))
+            validar_largo(nombre_finca, 100, 'El nombre de la finca', obligatorio=True)
+            ubicacion = limpiar_texto(request.form.get('ubicacion'))
+            validar_largo(ubicacion, 200, 'La ubicación')
+            rubro = limpiar_texto(request.form.get('rubro'))
+            validar_largo(rubro, 200, 'El rubro')
+            area_total = a_decimal(
+                request.form.get('area_total'), 'El área total', minimo=0
+            )
+
+            finca.nombre_finca = nombre_finca
+            finca.ubicacion = ubicacion or None
+            finca.area_total = area_total
+            finca.rubro = rubro or None
+            db.session.commit()
+            flash('Finca actualizada exitosamente.', 'success')
+            return redirect(url_for('fincas.listar'))
+        except ErrorValidacion as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+
     return render_template('fincas/editar.html', finca=finca)
 
-@bp.route('/eliminar/<id>', methods=['POST'])
+
+@bp.route('/eliminar/<int:id>', methods=['POST'])
 @login_required
 def eliminar(id):
-    try:
-        id_finca = int(id)
-        finca = Finca.query.get(id_finca)
-    except (ValueError, TypeError):
-        flash('Finca no encontrada.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
-    if not finca:
-        flash('Finca no encontrada.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
-    if finca.id_productor != current_user.id_productor:
-        flash('No tiene permisos para acceder.', 'danger')
-        return redirect(url_for('fincas.listar'))
-    
+    finca = obtener_finca(id)
     db.session.delete(finca)
     db.session.commit()
     flash('Finca eliminada exitosamente.', 'success')

@@ -1,11 +1,70 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required, current_user
-from app.config.database import db
-from app.models import Inventario, Producto, Finca
-from app.utils.suscripcion import verificar_limite
 from datetime import datetime
 
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
+from app.config.database import db
+from app.models import Finca, Inventario, Producto
+from app.utils.permisos import obtener_finca, obtener_inventario
+from app.utils.suscripcion import verificar_limite
+from app.utils.validaciones import (
+    ErrorValidacion,
+    a_decimal,
+    a_entero,
+    a_fecha,
+    limpiar_texto,
+    validar_largo,
+)
+
 bp = Blueprint('inventario', __name__, url_prefix='/inventario')
+
+UNIDADES = ('kg', 'litros', 'unidades', 'sacos', 'galones')
+
+
+def _finca_del_usuario(id_finca):
+    return obtener_finca(id_finca)
+
+
+def _validar_producto(id_producto):
+    producto = Producto.query.get(id_producto)
+    if not producto:
+        raise ErrorValidacion('El producto seleccionado no existe.')
+    return producto
+
+
+def _leer_datos():
+    id_producto = a_entero(request.form.get('id_producto'), 'El producto', minimo=1)
+    id_finca = a_entero(request.form.get('id_finca'), 'La finca', minimo=1)
+    _validar_producto(id_producto)
+    finca = _finca_del_usuario(id_finca)
+
+    cantidad = a_decimal(
+        request.form.get('cantidad'), 'La cantidad', minimo=0, obligatorio=True
+    )
+    unidad_medida = limpiar_texto(request.form.get('unidad_medida')) or 'kg'
+    if unidad_medida not in UNIDADES:
+        raise ErrorValidacion('La unidad de medida no es válida.')
+    stock_minimo = a_decimal(
+        request.form.get('stock_minimo'), 'El stock mínimo', minimo=0
+    ) or 0
+    costo_unitario = a_decimal(
+        request.form.get('costo_unitario'), 'El costo unitario', minimo=0
+    ) or 0
+    proveedor = validar_largo(request.form.get('proveedor'), 100, 'El proveedor')
+    fecha = a_fecha(request.form.get('fecha_ingreso'), 'La fecha de ingreso')
+    return {
+        'id_producto': id_producto,
+        'id_finca': finca.id,
+        'cantidad': cantidad,
+        'unidad_medida': unidad_medida,
+        'stock_minimo': stock_minimo,
+        'costo_unitario': costo_unitario,
+        'proveedor': proveedor,
+        'fecha_ingreso': (
+            datetime.combine(fecha, datetime.min.time()) if fecha else datetime.utcnow()
+        ),
+    }
+
 
 @bp.route('/')
 @login_required
@@ -15,6 +74,7 @@ def listar():
     inventarios = Inventario.query.filter(Inventario.id_finca.in_(fincas_ids)).all()
     return render_template('inventario/listar.html', inventarios=inventarios)
 
+
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required
 def crear():
@@ -22,81 +82,73 @@ def crear():
     if not puede:
         flash(mensaje, 'warning')
         return redirect(url_for('suscripciones.upgrade'))
-    
-    productos = Producto.query.all()
-    fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
-    
-    if request.method == 'POST':
-        id_producto = request.form.get('id_producto')
-        id_finca = request.form.get('id_finca')
-        cantidad = request.form.get('cantidad')
-        unidad_medida = request.form.get('unidad_medida')
-        fecha_ingreso = request.form.get('fecha_ingreso')
-        proveedor = request.form.get('proveedor')
-        costo_unitario = request.form.get('costo_unitario')
-        stock_minimo = request.form.get('stock_minimo')
-        
-        inventario = Inventario(
-            id_producto=int(id_producto),
-            id_finca=int(id_finca),
-            cantidad=float(cantidad) if cantidad else 0,
-            unidad_medida=unidad_medida,
-            fecha_ingreso=datetime.strptime(fecha_ingreso, '%Y-%m-%d') if fecha_ingreso else datetime.utcnow(),
-            proveedor=proveedor,
-            costo_unitario=float(costo_unitario) if costo_unitario else 0,
-            stock_minimo=float(stock_minimo) if stock_minimo else 0
-        )
-        db.session.add(inventario)
-        db.session.commit()
-        
-        flash('Producto agregado al inventario exitosamente.', 'success')
-        return redirect(url_for('inventario.listar'))
-    
-    return render_template('inventario/crear.html', productos=productos, fincas=fincas)
 
-@bp.route('/editar/<id>', methods=['GET', 'POST'])
+    productos = Producto.query.order_by(Producto.nombre_producto).all()
+    fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
+
+    if request.method == 'POST':
+        try:
+            datos = _leer_datos()
+            db.session.add(Inventario(**datos))
+            db.session.commit()
+            flash('Producto agregado al inventario exitosamente.', 'success')
+            return redirect(url_for('inventario.listar'))
+        except ErrorValidacion as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+
+    return render_template(
+        'inventario/crear.html', productos=productos, fincas=fincas
+    )
+
+
+@bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar(id):
-    inventario = Inventario.query.get(int(id))
-    productos = Producto.query.all()
+    inventario = obtener_inventario(id)
+    productos = Producto.query.order_by(Producto.nombre_producto).all()
     fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
-    
-    if request.method == 'POST':
-        id_producto = request.form.get('id_producto')
-        id_finca = request.form.get('id_finca')
-        inventario.id_producto = int(id_producto)
-        inventario.id_finca = int(id_finca)
-        inventario.cantidad = float(request.form.get('cantidad')) if request.form.get('cantidad') else 0
-        inventario.unidad_medida = request.form.get('unidad_medida')
-        inventario.proveedor = request.form.get('proveedor')
-        inventario.costo_unitario = float(request.form.get('costo_unitario')) if request.form.get('costo_unitario') else 0
-        inventario.stock_minimo = float(request.form.get('stock_minimo')) if request.form.get('stock_minimo') else 0
-        db.session.commit()
-        
-        flash('Inventario actualizado exitosamente.', 'success')
-        return redirect(url_for('inventario.listar'))
-    
-    return render_template('inventario/editar.html', inventario=inventario, productos=productos, fincas=fincas)
 
-@bp.route('/eliminar/<id>', methods=['POST'])
+    if request.method == 'POST':
+        try:
+            datos = _leer_datos()
+            for campo, valor in datos.items():
+                setattr(inventario, campo, valor)
+            db.session.commit()
+            flash('Inventario actualizado exitosamente.', 'success')
+            return redirect(url_for('inventario.listar'))
+        except ErrorValidacion as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+
+    return render_template(
+        'inventario/editar.html',
+        inventario=inventario,
+        productos=productos,
+        fincas=fincas,
+    )
+
+
+@bp.route('/eliminar/<int:id>', methods=['POST'])
 @login_required
 def eliminar(id):
-    inventario = Inventario.query.get(int(id))
-    if inventario:
-        db.session.delete(inventario)
-        db.session.commit()
-        flash('Registro de inventario eliminado.', 'success')
-    else:
-        flash('Registro no encontrado.', 'danger')
+    inventario = obtener_inventario(id)
+    db.session.delete(inventario)
+    db.session.commit()
+    flash('Registro de inventario eliminado.', 'success')
     return redirect(url_for('inventario.listar'))
+
 
 @bp.route('/alertas')
 @login_required
 def alertas():
     fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
     fincas_ids = [f.id for f in fincas]
-    inventarios = Inventario.query.filter(Inventario.id_finca.in_(fincas_ids), Inventario.cantidad <= 0).all()
+    inventarios = Inventario.query.filter(
+        Inventario.id_finca.in_(fincas_ids), Inventario.cantidad <= 0
+    ).all()
     return render_template('inventario/alertas.html', inventarios=inventarios)
+
 
 @bp.route('/reportes')
 @login_required
@@ -104,11 +156,17 @@ def reportes():
     fincas = Finca.query.filter_by(id_productor=current_user.id_productor).all()
     fincas_ids = [f.id for f in fincas]
     inventarios = Inventario.query.filter(Inventario.id_finca.in_(fincas_ids)).all()
-    
-    valor_total = sum(inv.cantidad * inv.costo_unitario for inv in inventarios)
-    productos_bajo_stock = sum(1 for inv in inventarios if inv.cantidad <= inv.stock_minimo)
-    
-    return render_template('inventario/reportes.html', 
-                          inventarios=inventarios,
-                          valor_total=valor_total,
-                          productos_bajo_stock=productos_bajo_stock)
+
+    valor_total = sum(
+        (inv.cantidad or 0) * (inv.costo_unitario or 0) for inv in inventarios
+    )
+    productos_bajo_stock = sum(
+        1 for inv in inventarios if (inv.cantidad or 0) <= (inv.stock_minimo or 0)
+    )
+
+    return render_template(
+        'inventario/reportes.html',
+        inventarios=inventarios,
+        valor_total=valor_total,
+        productos_bajo_stock=productos_bajo_stock,
+    )

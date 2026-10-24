@@ -1,4 +1,3 @@
-successfully downloaded text file (SHA: e0b98b48e602e4c2f7d4eb4f4669954f9fc7ebbe)
 {% extends "base.html" %}
 {% block title %}Gestión de Usuarios - AgroDev{% endblock %}
 {% block content %}
@@ -42,7 +41,7 @@ successfully downloaded text file (SHA: e0b98b48e602e4c2f7d4eb4f4669954f9fc7ebbe
                         <td data-label="Plan">
                             {% set suscripcion = suscripcion_por_usuario.get(usuario.id) %}
                             {% if suscripcion %}
-                            <span class="badge bg-info text-dark">{{ suscripcion.plan.nombre_plan }}</span>
+                            <span class="badge bg-info text-dark">{{ suscripcion.plan.nombre_plan|nombre_plan_visible }}</span>
                             {% else %}
                             <span class="badge bg-secondary">Sin plan</span>
                             {% endif %}
@@ -150,7 +149,7 @@ successfully downloaded text file (SHA: e0b98b48e602e4c2f7d4eb4f4669954f9fc7ebbe
                                             {% set suscripcion_actual = suscripcion_por_usuario.get(usuario.id) %}
                                             {% for plan in planes %}
                                             <option value="{{ plan.id }}" {% if suscripcion_actual and suscripcion_actual.plan.id == plan.id %}selected{% endif %}>
-                                                {{ plan.nombre_plan }} (${{ plan.precio_mensual }}/mes)
+                                                {{ plan.nombre_plan|nombre_plan_visible }} (${{ plan.precio_mensual }}/mes)
                                             </option>
                                             {% endfor %}
                                         </select>

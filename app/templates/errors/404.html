@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Página No Encontrada | AgroDev</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>404 - PÃ¡gina No Encontrada | AgroDev</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
     <style>
         body { background-color: #f8f9fa; }
         .error-page { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
@@ -15,8 +15,8 @@
     <div class="container error-page">
         <div class="text-center">
             <h1 class="display-1 text-muted">404</h1>
-            <h2 class="mb-3">Página No Encontrada</h2>
-            <p class="text-muted mb-4">La página que buscas no existe o fue movida.</p>
+            <h2 class="mb-3">PÃ¡gina No Encontrada</h2>
+            <p class="text-muted mb-4">La pÃ¡gina que buscas no existe o fue movida.</p>
             <a href="/" class="btn btn-primary">
                 <i class="bi bi-house"></i> Volver al Inicio
             </a>
