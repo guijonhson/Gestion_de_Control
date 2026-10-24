@@ -1,90 +1,88 @@
-const CACHE_NAME = 'agrodev-v1';
-const STATIC_CACHE = 'agrodev-static-v1';
+const CACHE_VERSION = 'agrodev-v3';
+const CACHE_NAME = 'agrodev-shell-' + CACHE_VERSION;
 
+// Solo recursos estáticos y la página sin conexión. Nunca HTML autenticado.
 const PRECACHE_URLS = [
-    '/',
-    '/login',
+    '/offline',
+    '/static/vendor/bootstrap/css/bootstrap.min.css',
+    '/static/vendor/bootstrap/js/bootstrap.bundle.min.js',
+    '/static/vendor/bootstrap-icons/bootstrap-icons.css',
+    '/static/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2',
     '/static/css/responsive.css',
-    '/static/img/logo.jpeg'
+    '/static/img/logo.jpeg',
+    '/static/img/icons/icon-192.png'
 ];
 
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(STATIC_CACHE).then(cache => {
-            return cache.addAll(PRECACHE_URLS);
-        }).then(() => self.skipWaiting())
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(PRECACHE_URLS))
     );
 });
 
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames
-                    .filter(name => name !== CACHE_NAME && name !== STATIC_CACHE)
-                    .map(name => caches.delete(name))
-            );
-        }).then(() => self.clients.claim())
+        caches.keys().then(nombres => Promise.all(
+            nombres
+                .filter(nombre => nombre !== CACHE_NAME)
+                .map(nombre => caches.delete(nombre))
+        )).then(() => self.clients.claim())
     );
+});
+
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    if (url.origin !== location.origin) {
+    // Nunca interceptar otros orígenes ni métodos que no sean GET.
+    if (url.origin !== self.location.origin || event.request.method !== 'GET') {
         return;
     }
 
-    if (event.request.method !== 'GET') {
+    // Archivos estáticos: cache-first con actualización en segundo plano.
+    if (url.pathname.startsWith('/static/')) {
+        event.respondWith(staticoConActualizacion(event.request));
         return;
     }
 
-    if (event.request.url.includes('/static/') || 
-        event.request.url.includes('/auth/') ||
-        event.request.url === '/' ||
-        event.request.url.endsWith('/')) {
-        event.respondWith(cacheFirst(event.request));
-    } else {
-        event.respondWith(networkFirst(event.request));
+    // Navegaciones HTML: red primero; nunca se guardan en caché.
+    if (event.request.mode === 'navigate') {
+        event.respondWith(redPrimero(event.request));
     }
 });
 
-async function cacheFirst(request) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-        return cachedResponse;
-    }
-    try {
-        const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
-            const cache = await caches.open(STATIC_CACHE);
-            cache.put(request, networkResponse.clone());
+async function staticoConActualizacion(request) {
+    const cache = await caches.open(CACHE_NAME);
+    // ignoreSearch permite reutilizar el precache aunque la página use ?v=.
+    const guardado = await cache.match(request, { ignoreSearch: true });
+
+    const red = fetch(request).then(response => {
+        if (response && response.ok) {
+            cache.put(request, response.clone());
         }
-        return networkResponse;
-    } catch (error) {
-        return new Response('Offline', { 
-            status: 503, 
-            statusText: 'Service Unavailable' 
-        });
-    }
+        return response;
+    }).catch(() => null);
+
+    return guardado || red || new Response('Recurso no disponible sin conexión.', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
 }
 
-async function networkFirst(request) {
+async function redPrimero(request) {
     try {
-        const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(request, networkResponse.clone());
-        }
-        return networkResponse;
+        return await fetch(request);
     } catch (error) {
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-            return cachedResponse;
-        }
-        return new Response('Offline - No cached version available', { 
-            status: 503, 
-            statusText: 'Service Unavailable' 
+        const cache = await caches.open(CACHE_NAME);
+        const offline = await cache.match('/offline');
+        return offline || new Response('Sin conexión.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
 }
