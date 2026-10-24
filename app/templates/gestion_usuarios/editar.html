@@ -12,15 +12,18 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Nombre de Usuario</label>
-                <input type="text" name="nombre_usuario" class="form-control" value="{{ usuario.nombre_usuario }}" required>
+                <input type="text" name="nombre_usuario" class="form-control" maxlength="50" autocomplete="username" value="{{ usuario.nombre_usuario }}" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Correo</label>
-                <input type="email" name="correo" class="form-control" value="{{ usuario.correo }}" required>
+                <input type="email" name="correo" class="form-control" maxlength="100" autocomplete="email" autocapitalize="none" spellcheck="false" value="{{ usuario.correo }}" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Nueva Contraseña (dejar en blanco para mantener)</label>
-                <input type="password" name="password" class="form-control">
+                <div class="input-group">
+                    <input type="password" id="password" name="password" class="form-control" minlength="8" maxlength="128" autocomplete="new-password">
+                    <button class="btn btn-outline-secondary btn-mostrar-password" type="button" data-toggle-password="password" aria-label="Mostrar contraseña" aria-pressed="false"><i class="bi bi-eye"></i></button>
+                </div>
             </div>
             {% if current_user.rol == 'administrador' %}
             <div class="mb-3">

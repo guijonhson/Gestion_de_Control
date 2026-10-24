@@ -1,14 +1,20 @@
-successfully downloaded text file (SHA: 1a9e4aba4c5997bf4bb7cc21beaea00d585e324e)
 {% extends "base.html" %}
 {% block title %}Nueva Parcela - AgroDev{% endblock %}
 {% block content %}
 <h3 class="h4 h3-md"><i class="bi bi-grid"></i> Nueva Parcela</h3>
 <div class="card mt-3">
     <div class="card-body">
+        {% if not fincas %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            Primero debes crear una finca para poder agregar parcelas.
+            <a href="{{ url_for('fincas.crear') }}" class="btn btn-sm btn-success ms-2">Crear finca</a>
+        </div>
+        {% endif %}
         <form method="POST">
             <div class="mb-3">
-                <label class="form-label">Finca</label>
-                <select name="id_finca" class="form-select" required>
+                <label class="form-label" for="id_finca">Finca</label>
+                <select name="id_finca" id="id_finca" class="form-select" required>
                     <option value="">Seleccionar...</option>
                     {% for financa in fincas %}
                     <option value="{{ financa.id }}">{{ financa.nombre_finca }}</option>
@@ -17,11 +23,11 @@ successfully downloaded text file (SHA: 1a9e4aba4c5997bf4bb7cc21beaea00d585e324e
             </div>
             <div class="mb-3">
                 <label class="form-label">Número/Nombre de Parcela</label>
-                <input type="text" name="numero_parcela" class="form-control" required>
+                <input type="text" name="numero_parcela" class="form-control" maxlength="50" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Área (hectáreas)</label>
-                <input type="number" step="0.01" name="area" class="form-control">
+                <input type="number" step="0.01" min="0" name="area" class="form-control">
             </div>
             <div class="mb-3">
                 <label class="form-label">Fecha de inicio de siembra</label>
@@ -73,7 +79,7 @@ successfully downloaded text file (SHA: 1a9e4aba4c5997bf4bb7cc21beaea00d585e324e
                 </div>
                 <div class="mb-3" id="grupo-pasto-otro" style="display:none;">
                     <label class="form-label">Especifique el pasto</label>
-                    <input type="text" name="pasto_otro" class="form-control">
+                    <input type="text" name="pasto_otro" class="form-control" maxlength="100">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Tipo de animal</label>
@@ -86,7 +92,7 @@ successfully downloaded text file (SHA: 1a9e4aba4c5997bf4bb7cc21beaea00d585e324e
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Raza</label>
-                    <input type="text" name="raza" id="raza" class="form-control" list="razas-sugeridas" placeholder="Escriba o elija una raza">
+                    <input type="text" name="raza" id="raza" class="form-control" list="razas-sugeridas" maxlength="100" placeholder="Escriba o elija una raza">
                     <datalist id="razas-sugeridas"></datalist>
                     <small class="form-text text-muted">Puede escribir cualquier raza.</small>
                 </div>
@@ -97,7 +103,7 @@ successfully downloaded text file (SHA: 1a9e4aba4c5997bf4bb7cc21beaea00d585e324e
             </div>
 
             <div class="d-flex flex-column flex-md-row gap-2">
-                <button type="submit" class="btn btn-success w-100 w-md-auto">Guardar</button>
+                <button type="submit" class="btn btn-success w-100 w-md-auto" {% if not fincas %}disabled{% endif %}>Guardar</button>
                 <a href="{{ url_for('parcelas.listar') }}" class="btn btn-secondary w-100 w-md-auto">Cancelar</a>
             </div>
         </form>
