@@ -1,4 +1,6 @@
 import os
+from datetime import timedelta
+
 from dotenv import load_dotenv
 
 # Cargar .env ANTES de leer cualquier variable
@@ -31,11 +33,17 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 7  # 7 días
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)  # "Mantener sesión"
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+    SEND_FILE_MAX_AGE_DEFAULT = 60 * 60 * 24 * 7  # 7 días para /static
+    ASSET_VERSION = (os.environ.get('RENDER_GIT_COMMIT') or '1')[:7]
 
 
 class ProductionConfig(Config):
     DEBUG = False
     SESSION_COOKIE_SECURE = True  # Solo cookies por HTTPS
+    REMEMBER_COOKIE_SECURE = True
     
     def __init__(self):
         if not self.SECRET_KEY:
