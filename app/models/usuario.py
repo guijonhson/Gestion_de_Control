@@ -15,6 +15,7 @@ class Usuario(db.Model):
     activo = db.Column(db.Boolean, default=True)
     ultimo_acceso = db.Column(db.DateTime)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_aceptacion_terminos = db.Column(db.DateTime, nullable=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password).decode('utf-8')
