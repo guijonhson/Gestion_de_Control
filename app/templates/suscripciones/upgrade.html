@@ -22,14 +22,14 @@
 <div class="row g-4">
     {% for plan in planes %}
     <div class="col-md-4">
-        <div class="card h-100 {% if plan.nombre_plan == 'PRO' %}border-primary{% elif plan.nombre_plan == 'BASICO' %}border-success border-2{% endif %}">
-            {% if plan.nombre_plan == 'BASICO' %}
+        <div class="card h-100 {% if plan.nombre_plan == 'PRO' %}border-primary{% elif plan.nombre_plan in ('BASICO', 'BÁSICO') %}border-success border-2{% endif %}">
+            {% if plan.nombre_plan in ('BASICO', 'BÁSICO') %}
             <div class="position-absolute top-0 end-0 m-2">
                 <span class="badge bg-success">Recomendado</span>
             </div>
             {% endif %}
             <div class="card-header bg-light text-center">
-                <h4 class="mb-0">{{ plan.nombre_plan }}</h4>
+                <h4 class="mb-0">{{ plan.nombre_plan|nombre_plan_visible }}</h4>
             </div>
             <div class="card-body text-center">
                 <h2 class="text-primary">${{ plan.precio_mensual }}</h2>

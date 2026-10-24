@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% macro contenido() %}
+<div class="container py-4" style="max-width: 900px;">
+    <div class="alert alert-warning">
+        <strong>Borrador pendiente de revisión legal.</strong>
+        Este texto describe el funcionamiento actual de la aplicación, pero debe ser
+        revisado por un abogado antes de considerarse definitivo.
+    </div>
+
+    <h1 class="h3">Términos y Condiciones</h1>
+    <p class="text-muted">Última actualización: borrador sin fecha definitiva.</p>
+
+    <h2 class="h5 mt-4">1. Servicio</h2>
+    <p>
+        Gestión de Control es una aplicación web de AgroDev PTY para registrar y
+        consultar información agropecuaria: fincas, parcelas, cultivos, aplicadores,
+        inventario, gastos, producción y registros de aplicación.
+    </p>
+
+    <h2 class="h5 mt-4">2. Cuenta y acceso</h2>
+    <p>
+        Para usar el sistema debes crear una cuenta con datos veraces y mantener la
+        confidencialidad de tu contraseña. Eres responsable de la actividad realizada
+        con tu cuenta. El administrador puede suspender cuentas por uso indebido.
+    </p>
+
+    <h2 class="h5 mt-4">3. Planes y límites</h2>
+    <p>
+        Los precios y límites vigentes se muestran en la página de planes y se leen de
+        la base de datos del sistema. Los pagos se coordinan por los canales de
+        contacto oficiales. No se procesan pagos automáticos dentro de la aplicación.
+    </p>
+
+    <h2 class="h5 mt-4">4. Uso permitido</h2>
+    <p>
+        No debes intentar acceder a datos de otros productores, alterar el
+        funcionamiento del sistema, introducir código malicioso ni usar la aplicación
+        para fines distintos a la gestión agropecuaria.
+    </p>
+
+    <h2 class="h5 mt-4">5. Datos del usuario</h2>
+    <p>
+        La información que registras pertenece a tu actividad. AgroDev PTY la usa para
+        prestar el servicio y contactarte. El tratamiento de datos se describe en la
+        Política de Privacidad.
+    </p>
+
+    <h2 class="h5 mt-4">6. Disponibilidad</h2>
+    <p>
+        El servicio se ofrece tal como está disponible. Puede haber interrupciones por
+        mantenimiento, fallos de internet o de los proveedores de infraestructura. La
+        aplicación necesita conexión a internet para funcionar; la versión instalable
+        no permite editar datos sin conexión.
+    </p>
+
+    <h2 class="h5 mt-4">7. Contacto</h2>
+    <p>
+        AgroDev PTY · {{ contacto.pais }}<br>
+        Correo: {{ contacto.correo }}<br>
+        Teléfono: {{ contacto.telefono }}
+    </p>
+
+    <p class="text-muted small mt-4">
+        [REVISAR CON ABOGADO: ley aplicable, jurisdicción, límites de responsabilidad,
+        cancelación, reembolsos y procedimiento de reclamos.]
+    </p>
+
+    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">Volver al registro</a>
+</div>
+{% endmacro %}
+
+{% block title %}Términos y Condiciones - AgroDev{% endblock %}
+{% block content %}{{ contenido() }}{% endblock %}
+{% block login_content %}{{ contenido() }}{% endblock %}

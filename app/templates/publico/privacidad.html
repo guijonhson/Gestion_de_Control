@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% macro contenido() %}
+<div class="container py-4" style="max-width: 900px;">
+    <div class="alert alert-warning">
+        <strong>Borrador pendiente de revisión legal.</strong>
+        Este texto describe el funcionamiento actual de la aplicación, pero debe ser
+        revisado por un abogado antes de considerarse definitivo.
+    </div>
+
+    <h1 class="h3">Política de Privacidad</h1>
+    <p class="text-muted">Última actualización: borrador sin fecha definitiva.</p>
+
+    <h2 class="h5 mt-4">1. Responsable</h2>
+    <p>
+        AgroDev PTY, {{ contacto.pais }}. Contacto:
+        {{ contacto.correo }} · {{ contacto.telefono }}.
+    </p>
+
+    <h2 class="h5 mt-4">2. Datos que se recogen</h2>
+    <ul>
+        <li>Datos de la cuenta: nombre del productor, teléfono, correo, nombre de usuario y contraseña cifrada.</li>
+        <li>Datos agropecuarios que el usuario registra: fincas, parcelas, cultivos, aplicadores, inventario, gastos, producción y registros de aplicación.</li>
+        <li>Fecha de aceptación de estos documentos y fecha del último acceso.</li>
+    </ul>
+
+    <h2 class="h5 mt-4">3. Para qué se usan</h2>
+    <p>
+        Para prestar el servicio, mostrar la información al usuario que la registró,
+        gestionar el plan contratado y contactar al usuario cuando solicita soporte o
+        recuperación de contraseña. No se venden datos a terceros.
+    </p>
+
+    <h2 class="h5 mt-4">4. Dónde se guardan</h2>
+    <p>
+        La información se guarda en servicios de infraestructura en la nube usados por
+        AgroDev PTY para alojar la aplicación y la base de datos. El acceso público a
+        la base de datos está restringido; la aplicación se conecta mediante
+        credenciales privadas.
+    </p>
+
+    <h2 class="h5 mt-4">5. Conservación y eliminación</h2>
+    <p>
+        Los datos se conservan mientras la cuenta esté activa. El administrador puede
+        eliminar usuarios y su historial desde el panel de gestión. Para solicitar la
+        eliminación de datos, escribe a {{ contacto.correo }}.
+    </p>
+
+    <h2 class="h5 mt-4">6. Seguridad</h2>
+    <p>
+        Las contraseñas se almacenan cifradas. El acceso a los datos requiere iniciar
+        sesión y cada productor solo puede consultar su propia información. No se debe
+        compartir la contraseña.
+    </p>
+
+    <h2 class="h5 mt-4">7. Servicios de terceros</h2>
+    <p>
+        La aplicación usa servicios de alojamiento y base de datos en la nube, y un
+        servicio de envío de alertas por correo al administrador. No se usan redes
+        sociales ni servicios de análisis publicitario.
+    </p>
+
+    <h2 class="h5 mt-4">8. Cambios</h2>
+    <p>
+        Estos textos pueden actualizarse. La versión vigente estará publicada en esta
+        misma página.
+    </p>
+
+    <p class="text-muted small mt-4">
+        [REVISAR CON ABOGADO: base legal del tratamiento, derechos del titular, plazos
+        de conservación, transferencias internacionales y autoridad de protección de
+        datos aplicable en Panamá.]
+    </p>
+
+    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">Volver al registro</a>
+</div>
+{% endmacro %}
+
+{% block title %}Política de Privacidad - AgroDev{% endblock %}
+{% block content %}{{ contenido() }}{% endblock %}
+{% block login_content %}{{ contenido() }}{% endblock %}
