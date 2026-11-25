@@ -34,29 +34,7 @@ from app.utils.validaciones import (
 bp = Blueprint('parcelas', __name__, url_prefix='/parcelas')
 
 
-def _leer_siembra(form):
-    
-    duracion_txt = limpiar_texto(form.get('duracion_cultivo'))
 
-    fecha = None
-    if fecha_txt:
-        try:
-            fecha = datetime.strptime(fecha_txt, '%Y-%m-%d').date()
-        except ValueError as exc:
-            raise ErrorValidacion('La fecha de inicio de siembra no es válida.') from exc
-
-    duracion = None
-    if duracion_txt:
-        try:
-            duracion = int(duracion_txt)
-        except ValueError as exc:
-            raise ErrorValidacion(
-                'La duración del cultivo debe ser un número entero de días.'
-            ) from exc
-        if duracion <= 0:
-            raise ErrorValidacion('La duración del cultivo debe ser mayor que 0 días.')
-
-    return fecha, duracion
 
 
 def _contexto_formulario():
@@ -182,7 +160,7 @@ def crear():
                 numero_parcela=numero_parcela,
                 area=area,
                 
-                duracion_cultivo=duracion,
+
                 tipo_uso=tipo_uso,
             )
             db.session.add(parcela)
