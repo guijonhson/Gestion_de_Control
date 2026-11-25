@@ -7,8 +7,6 @@ from app.config.database import db
 COLUMNAS_NUEVAS = [
     ('parcela', 'tipo_uso', "VARCHAR(20) DEFAULT 'agricola' NOT NULL"),
     ('finca', 'rubro', 'VARCHAR(200)'),
-    ('parcela', 'fecha_inicio_siembra', 'DATE'),
-    ('parcela', 'duracion_cultivo', 'INTEGER'),
     ('usuario', 'fecha_aceptacion_terminos', 'TIMESTAMP'),
 ]
 

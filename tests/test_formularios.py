@@ -1,6 +1,7 @@
 from datetime import date
 
-from app.models import Cultivo, Finca, Gasto
+from app.config.database import db
+from app.models import Cultivo, Finca, Gasto, Parcela, ParcelaAgricola
 
 
 def test_finca_rechaza_nombre_demasiado_largo(client, fabrica, login):
@@ -29,9 +30,10 @@ def test_finca_rechaza_area_negativa(client, fabrica, login):
     assert Finca.query.count() == 0
 
 
-def test_parcela_rechaza_duracion_cero(client, fabrica, login):
+def test_parcela_crear_guarda_densidad(client, fabrica, login):
     usuario = fabrica.productor(correo='form-parcela@example.com')
     finca = fabrica.finca(usuario.productor, 'Finca')
+    cultivo = Cultivo.query.first()
     login('form-parcela@example.com')
 
     respuesta = client.post(
@@ -41,12 +43,60 @@ def test_parcela_rechaza_duracion_cero(client, fabrica, login):
             'numero_parcela': 'P1',
             'area': '1',
             'tipo_uso': 'agricola',
-            'duracion_cultivo': '0',
+            'id_cultivo': str(cultivo.id),
+            'densidad_plantas_ha': '4500',
         },
         follow_redirects=True,
     )
-    assert 'mayor que 0' in respuesta.get_data(as_text=True)
-    assert len(finca.parcelas) == 0
+
+    assert respuesta.status_code == 200
+    parcela = Parcela.query.filter_by(numero_parcela='P1').first()
+    assert parcela is not None
+    detalle = ParcelaAgricola.query.filter_by(id_parcela=parcela.id).first()
+    assert detalle is not None
+    assert detalle.densidad_plantas_ha == 4500
+    assert parcela.cultivo_actual == cultivo.nombre_cultivo
+
+
+def test_parcela_editar_actualiza_densidad(client, fabrica, login):
+    usuario = fabrica.productor(correo='form-parcela-editar@example.com')
+    finca = fabrica.finca(usuario.productor, 'Finca')
+    parcela = fabrica.parcela(finca, 'P1')
+    cultivo = Cultivo.query.first()
+    login('form-parcela-editar@example.com')
+
+    def editar(densidad):
+        return client.post(
+            f'/parcelas/editar/{parcela.id}',
+            data={
+                'id_finca': str(finca.id),
+                'numero_parcela': 'P1-editada',
+                'area': '3',
+                'tipo_uso': 'agricola',
+                'id_cultivo': str(cultivo.id),
+                'densidad_plantas_ha': densidad,
+            },
+            follow_redirects=True,
+        )
+
+    respuesta = editar('3200')
+    assert respuesta.status_code == 200
+    assert 'actualizada' in respuesta.get_data(as_text=True)
+
+    db.session.expire_all()
+    parcela = db.session.get(Parcela, parcela.id)
+    assert parcela.numero_parcela == 'P1-editada'
+    detalle = ParcelaAgricola.query.filter_by(id_parcela=parcela.id).first()
+    assert detalle is not None
+    assert detalle.densidad_plantas_ha == 3200
+
+    # La densidad se puede volver a editar.
+    respuesta = editar('5000')
+    assert respuesta.status_code == 200
+
+    db.session.expire_all()
+    detalle = ParcelaAgricola.query.filter_by(id_parcela=parcela.id).first()
+    assert detalle.densidad_plantas_ha == 5000
 
 
 def test_parcela_rechaza_finca_ajena(client, fabrica, login):

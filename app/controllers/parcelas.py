@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -32,9 +31,6 @@ from app.utils.validaciones import (
 )
 
 bp = Blueprint('parcelas', __name__, url_prefix='/parcelas')
-
-
-
 
 
 def _contexto_formulario():
@@ -153,14 +149,10 @@ def crear():
             if tipo_uso not in ('agricola', 'ganadera'):
                 tipo_uso = 'agricola'
 
-            
-
             parcela = Parcela(
                 id_finca=finca.id,
                 numero_parcela=numero_parcela,
                 area=area,
-                
-
                 tipo_uso=tipo_uso,
             )
             db.session.add(parcela)
@@ -185,8 +177,6 @@ def editar(id):
 
     if request.method == 'POST':
         try:
-            fecha_siembra, duracion = _leer_siembra(request.form)
-
             parcela.id_finca = _finca_del_usuario(
                 a_entero(request.form.get('id_finca'), 'La finca', minimo=1)
             ).id
@@ -198,8 +188,6 @@ def editar(id):
                 obligatorio=True,
             )
             parcela.area = a_decimal(request.form.get('area'), 'El área', minimo=0)
-            
-  
 
             nuevo_tipo = request.form.get('tipo_uso', parcela.tipo_uso)
             if nuevo_tipo not in ('agricola', 'ganadera'):
