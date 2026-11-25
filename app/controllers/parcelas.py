@@ -153,7 +153,7 @@ def crear():
             if tipo_uso not in ('agricola', 'ganadera'):
                 tipo_uso = 'agricola'
 
-            fecha_siembra, duracion = _leer_siembra(request.form)
+            
 
             parcela = Parcela(
                 id_finca=finca.id,
@@ -199,7 +199,7 @@ def editar(id):
             )
             parcela.area = a_decimal(request.form.get('area'), 'El área', minimo=0)
             
-            parcela.duracion_cultivo = duracion
+  
 
             nuevo_tipo = request.form.get('tipo_uso', parcela.tipo_uso)
             if nuevo_tipo not in ('agricola', 'ganadera'):
