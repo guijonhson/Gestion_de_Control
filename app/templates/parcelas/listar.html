@@ -18,7 +18,7 @@
                         <th>Número</th>
                         <th>Finca</th>
                         <th>Área (ha)</th>
-                        <th>Inicio de siembra</th>
+                        
                         <th>Duración (días)</th>
                         <th>Tipo</th>
                         <th>Detalle</th>
@@ -31,7 +31,7 @@
                         <td data-label="Número" class="fw-bold">{{ parcela.numero_parcela }}</td>
                         <td data-label="Finca">{{ parcela.finca.nombre_finca }}</td>
                         <td data-label="Área">{{ parcela.area or '-' }}</td>
-                        <td data-label="Inicio de siembra">{{ parcela.fecha_inicio_siembra.strftime('%d/%m/%Y') if parcela.fecha_inicio_siembra else '-' }}</td>
+                        
                         <td data-label="Duración">{{ parcela.duracion_cultivo or '-' }}</td>
                         <td data-label="Tipo">
                             {% if parcela.tipo_uso == 'ganadera' %}

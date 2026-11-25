@@ -35,7 +35,7 @@ bp = Blueprint('parcelas', __name__, url_prefix='/parcelas')
 
 
 def _leer_siembra(form):
-    fecha_txt = limpiar_texto(form.get('fecha_inicio_siembra'))
+    
     duracion_txt = limpiar_texto(form.get('duracion_cultivo'))
 
     fecha = None
@@ -181,7 +181,7 @@ def crear():
                 id_finca=finca.id,
                 numero_parcela=numero_parcela,
                 area=area,
-                fecha_inicio_siembra=fecha_siembra,
+                
                 duracion_cultivo=duracion,
                 tipo_uso=tipo_uso,
             )
@@ -220,7 +220,7 @@ def editar(id):
                 obligatorio=True,
             )
             parcela.area = a_decimal(request.form.get('area'), 'El área', minimo=0)
-            parcela.fecha_inicio_siembra = fecha_siembra
+            
             parcela.duracion_cultivo = duracion
 
             nuevo_tipo = request.form.get('tipo_uso', parcela.tipo_uso)
